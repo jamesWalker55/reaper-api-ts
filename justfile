@@ -1,64 +1,60 @@
+node := "bun"
 tstl := "node_modules/typescript-to-lua/dist/tstl.js"
 
 watch:
     just copy-files
-    bun "{{tstl}}" --watch
+    {{node}} "{{tstl}}" --watch
 
 build:
     just copy-files
-    bun "{{tstl}}"
+    {{node}} "{{tstl}}"
 
 # Manually copy some files to dist
-# Written by ChatGPT
+# Written by Gemini
 copy-files:
-    #!pwsh
+    #!bash
+    set -euxo pipefail
 
     # Define source and destination directories
-    $SRC_DIR = "src"
-    $DST_DIR = "dist"
+    SRC_DIR="src"
+    DST_DIR="dist"
 
     # Ensure the destination directory exists
-    if (-Not (Test-Path -Path $DST_DIR)) {
-        New-Item -ItemType Directory -Path $DST_DIR
-    }
+    if [ ! -d "$DST_DIR" ]; then
+        mkdir -p "$DST_DIR"
+    fi
 
     # == Copy package.json
 
-    Copy-Item -Path "package.json" -Destination "$DST_DIR/package.json" -Force
-    Write-Output "package.json has been copied successfully."
+    # -f ensures it overwrites without prompting
+    cp -f "package.json" "$DST_DIR/package.json"
+    echo "package.json has been copied successfully."
 
     # == Copy declaration files
 
-    # Get all .d.ts files in the source directory
-    $files = Get-ChildItem -Path $SRC_DIR -Recurse -Filter "*.d.ts"
+    # Find all .d.ts files in src recursively
+    find "$SRC_DIR" -name "*.d.ts" -type f | while read -r file; do
+        # Determine the relative path (remove src/ from the start)
+        rel_path="${file#$SRC_DIR/}"
 
-    foreach ($file in $files) {
-        # Determine the relative path of the file from the src dir
-        $relPath = Resolve-Path -Path $file -Relative -RelativeBasePath $SRC_DIR
-
-        # Determine the destination path
-        $dstPath = Join-Path -Path $DST_DIR -ChildPath $relPath
+        # Determine destination path
+        dst_path="$DST_DIR/$rel_path"
 
         # Ensure the destination directory exists
-        $dstDir = Split-Path -Path $dstPath -Parent
-        if (-Not (Test-Path -Path $dstDir)) {
-            New-Item -ItemType Directory -Path $dstDir -Force
-        }
+        dst_dir=$(dirname "$dst_path")
+        if [ ! -d "$dst_dir" ]; then
+            mkdir -p "$dst_dir"
+        fi
 
-        # Copy the file using a hard link
-        if (Test-Path -Path $dstPath) {
-            Remove-Item -Path $dstPath -Force
-        }
-        New-Item -ItemType HardLink -Path $dstPath -Value $file.FullName
-    }
+        # Copy the file (overwriting if it exists)
+        cp -f "$file" "$dst_path"
+    done
 
-    Write-Output "All .d.ts files have been copied successfully."
+    echo "All .d.ts files have been copied successfully."
 
     # == Copy plugins directory
 
-    $pluginsSrc = "plugins"
-    $pluginsDst = "dist"
-
-    Copy-Item -Path $pluginsSrc -Destination $pluginsDst -Recurse -Force
-    Write-Output "The plugins directory has been copied successfully."
-
+    PLUGINS_SRC="plugins"
+    # -r for recursive, -f for force/overwrite
+    cp -rf "$PLUGINS_SRC" "$DST_DIR/"
+    echo "The plugins directory has been copied successfully."
