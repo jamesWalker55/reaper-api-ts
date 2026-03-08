@@ -5,7 +5,6 @@
     "": {
       "name": "reaper-api",
       "devDependencies": {
-        "json": "link:json.lua",
         "lua-types": "^2.13.1",
         "typescript": "^5.9.3",
         "typescript-to-lua": "^1.33.2",
@@ -24,8 +23,6 @@
     "hasown": ["hasown@2.0.2", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ=="],
 
     "is-core-module": ["is-core-module@2.16.1", "", { "dependencies": { "hasown": "^2.0.2" } }, "sha512-UfoeMA6fIJ8wTYFEUjelnaGI67v6+N7qXJEvQuIGa99l4xsCruSYOVSQ0uPANn4dAzm8lkYPaKLrrijLq7x23w=="],
-
-    "json": ["json.lua@link:json.lua", {}],
 
     "lua-types": ["lua-types@2.13.1", "", {}, "sha512-rRwtvX6kS+5MpuO3xpvKsnYjdSDDI064Qq1OqX8gY+r+0l7m3dFLiZPDFoHqH22jaBpEvcHcPs6+WD7qkdmFsA=="],
 

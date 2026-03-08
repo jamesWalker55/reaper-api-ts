@@ -1,4 +1,4 @@
-import { encode } from "json";
+import { encode } from "./json";
 import { copy } from "./clipboard";
 import { parseIni } from "./ini";
 import { inspect } from "./inspect";

@@ -1,6 +1,6 @@
 AddCwdToImportPaths();
 
-import { encode } from "json";
+import { encode } from "./json";
 import { inspect } from "./inspect";
 import { getProjectRoutingInfo, Item, MidiTake, Track } from "./track";
 import { copy } from "./clipboard";

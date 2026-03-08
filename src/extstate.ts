@@ -1,4 +1,4 @@
-import * as JSON from "json";
+import * as JSON from "./json";
 import { assertUnreachable } from "./utils";
 
 /**
