@@ -1,6 +1,6 @@
 /** @noSelfInFile **/
 
-// Up to date with REAPER v7.25/win64
+// Generated from REAPER v7.59/win64
 
 // https://stackoverflow.com/questions/56737033/how-to-define-an-opaque-type-in-typescript
 declare const opaqueTypeTag: unique symbol;
@@ -13,6 +13,7 @@ declare type HWND = { readonly [opaqueTypeTag]: "HWND" };
 declare type IReaperControlSurface = {
   readonly [opaqueTypeTag]: "IReaperControlSurface";
 };
+declare type ImGui_Bitmap = { readonly [opaqueTypeTag]: "ImGui_Bitmap" };
 declare type ImGui_Context = { readonly [opaqueTypeTag]: "ImGui_Context" };
 declare type ImGui_DrawList = { readonly [opaqueTypeTag]: "ImGui_DrawList" };
 declare type ImGui_DrawListSplitter = {
@@ -501,6 +502,22 @@ declare namespace reaper {
    * Create a send/receive (desttrInOptional!=NULL), or a hardware output (desttrInOptional==NULL) with default properties, return >=0 on success (== new send/receive index). See RemoveTrackSend, GetSetTrackSendInfo, GetTrackSendInfo_Value, SetTrackSendInfo_Value.
    */
   function CreateTrackSend(tr: MediaTrack, desttrIn: MediaTrack | null): number;
+
+  /**
+   * ```
+   * reaper.CrossfadeEditor_OnCommand(integer command)
+   * ```
+   * Run a command from the Crossfade Editor section of the actions list.
+   */
+  function CrossfadeEditor_OnCommand(command: number): void;
+
+  /**
+   * ```
+   * reaper.CrossfadeEditor_Show(boolean show)
+   * ```
+   * Show or hide the Crossfade Editor window
+   */
+  function CrossfadeEditor_Show(show: boolean): void;
 
   /**
    * ```
@@ -1006,6 +1023,8 @@ declare namespace reaper {
    *
    * Otherwise, ptidx will be based on the number of visible points in the automation item, including all loop iterations.
    *
+   * Prior to REAPER v7.46, this function interpreted the 0x10000000 autoitem_idx flag backwards.
+   *
    * See CountEnvelopePointsEx, GetEnvelopePointEx, SetEnvelopePointEx, InsertEnvelopePointEx.
    */
   function DeleteEnvelopePointEx(
@@ -1259,7 +1278,7 @@ declare namespace reaper {
    * ```
    * boolean retval, string name, string ident = reaper.EnumInstalledFX(integer index)
    * ```
-   * Enumerates installed FX. Returns true if successful, sets nameOut and identOut to name and ident of FX at index.
+   * Enumerates installed FX. Returns true if successful, sets nameOut and identOut to name and ident of FX at index. In REAPER 7.42+, use index=-1 to re-read JSFX info.
    */
   function EnumInstalledFX(
     index: number,
@@ -1796,6 +1815,8 @@ declare namespace reaper {
    *
    * Otherwise, ptidx will be based on the number of visible points in the automation item, including all loop iterations.
    *
+   * Prior to REAPER v7.46, this function interpreted the 0x10000000 autoitem_idx flag backwards.
+   *
    * See GetEnvelopePointEx, SetEnvelopePointEx, InsertEnvelopePointEx, DeleteEnvelopePointEx.
    */
   function GetEnvelopePointByTimeEx(
@@ -1817,6 +1838,8 @@ declare namespace reaper {
    * even if the automation item is trimmed so that not all points are visible.
    *
    * Otherwise, ptidx will be based on the number of visible points in the automation item, including all loop iterations.
+   *
+   * When using full loop iteration automation item mode, the time returned will be the project time of the first iteration of the point, and selection state will only be set if all visible instances of the point in the automation item are selected.
    *
    * See CountEnvelopePointsEx, SetEnvelopePointEx, InsertEnvelopePointEx, DeleteEnvelopePointEx.
    */
@@ -2144,6 +2167,8 @@ declare namespace reaper {
    *
    * C_FADEOUTSHAPE : int * : fadeout shape, 0..6, 0=linear
    *
+   * I_FADELPF : int * : low pass frequency fade, &1=fade-in, &2=fade-out
+   *
    * I_GROUPID : int * : group ID, 0=no group
    *
    * I_LASTY : int * : Y-position (relative to top of track) in pixels (read-only)
@@ -2270,6 +2295,64 @@ declare namespace reaper {
    *
    * I_CUSTOMCOLOR : int * : custom color, OS dependent color|0x1000000 (i.e. ColorToNative(r,g,b)|0x1000000). If you do not |0x1000000, then it will not be used, but will store the color
    *
+   * IP_SPECEDIT:CNT : int : spectral edit count (read-only)
+   *
+   * IP_SPECEDIT:DELETE:x : int : read or write this key to remove the spectral edit specified
+   *
+   * IP_SPECEDIT:ADD : int : read or write this key to add a new spectral edit (returns index)
+   *
+   * IP_SPECEDIT:SORT : int : read or write this key to re-sort spectral edits (be sure to do this following a position change or insert of new edit)
+   *
+   * I_SPECEDIT:FFT_SIZE : int * : FFT size used by spectral edits for this take
+   *
+   * D_SPECEDIT:x:POSITION : double * : position of spectral edit start (changing this requires a resort of spectral edits)
+   *
+   * D_SPECEDIT:x:LENGTH : double * : length of spectral edit
+   *
+   * F_SPECEDIT:x:GAIN : float * : gain of spectral edit
+   *
+   * F_SPECEDIT:x:FADE_IN : float * : fade-in size 0..1
+   *
+   * F_SPECEDIT:x:FADE_OUT : float * : fade-out size 0..1
+   *
+   * F_SPECEDIT:x:FADE_LOW : float * : fade-lf size 0..1
+   *
+   * F_SPECEDIT:x:FADE_HI : float * : fade-hf size 0..1
+   *
+   * I_SPECEDIT:x:CHAN : int * : channel index, -1 for omni
+   *
+   * I_SPECEDIT:x:FLAGS : int * : flags, &1=bypassed, &2=solo
+   *
+   * F_SPECEDIT:x:GATE_THRESH : float * : gate threshold
+   *
+   * F_SPECEDIT:x:GATE_FLOOR : float * : gate floor
+   *
+   * F_SPECEDIT:x:COMP_THRESH : float * : comp threshold
+   *
+   * F_SPECEDIT:x:COMP_RATIO : float * : comp ratio
+   *
+   * B_SPECEDIT:x:SELECTED : bool * : selection state
+   *
+   * I_SPECEDIT:x:TOPFREQ_CNT : int * : (read-only) number of top frequency-points
+   *
+   * I_SPECEDIT:x:TOPFREQ_ADD:pos:val : int * : reading or writing will insert top frequency-point with position/value pair, returns index
+   *
+   * I_SPECEDIT:x:TOPFREQ_DEL:y : int * : reading or writing will delete top frequency-point y. there will always be at least one point.
+   *
+   * F_SPECEDIT:x:TOPFREQ_POS:y : float * : (read-only) get position of top frequency-point y
+   *
+   * F_SPECEDIT:x:TOPFREQ_FREQ:y : float * : (read-only) get frequency of top frequency-point y
+   *
+   * I_SPECEDIT:x:BOTFREQ_CNT : int * : number of bottom frequency-points
+   *
+   * I_SPECEDIT:x:BOTFREQ_ADD:pos:val : int * : reading or writing will insert bottom frequency-point with position/value pair, returns index
+   *
+   * I_SPECEDIT:x:BOTFREQ_DEL:y : int * : reading or writing will delete bottom frequency-point y. there will always be at least one point.
+   *
+   * F_SPECEDIT:x:BOTFREQ_POS:y : float * : (read-only) get position of bottom frequency-point y
+   *
+   * F_SPECEDIT:x:BOTFREQ_FREQ:y : float * : (read-only) get frequency of bottom frequency-point y
+   *
    * IP_TAKENUMBER : int : take number (read-only, returns the take number directly)
    *
    * P_TRACK : pointer to MediaTrack (read-only)
@@ -2362,13 +2445,15 @@ declare namespace reaper {
    * I_AUTOMODE : int * : track automation mode, 0=trim/off, 1=read, 2=touch, 3=write, 4=latch
    * I_NCHAN : int * : number of track channels, 2-128, even numbers only
    * I_SELECTED : int * : track selected, 0=unselected, 1=selected
-   * I_WNDH : int * : current TCP window height in pixels including envelopes (read-only)
-   * I_TCPH : int * : current TCP window height in pixels not including envelopes (read-only)
-   * I_TCPY : int * : current TCP window Y-position in pixels relative to top of arrange view (read-only)
-   * I_MCPX : int * : current MCP X-position in pixels relative to mixer container (read-only)
-   * I_MCPY : int * : current MCP Y-position in pixels relative to mixer container (read-only)
+   * I_WNDH : int * : current TCP height in pixels including envelopes (read-only)
+   * I_TCPH : int * : current TCP height in pixels not including envelopes (read-only)
+   * I_TCPY : int * : current TCP Y-position in pixels relative to top of arrange view (read-only)
+   * I_TCPSCREENY : int * : current TCP Y-position in pixels relative to screen (read-only)
    * I_MCPW : int * : current MCP width in pixels (read-only)
    * I_MCPH : int * : current MCP height in pixels (read-only)
+   * I_MCPX : int * : current MCP X-position in pixels relative to mixer container (read-only)
+   * I_MCPY : int * : current MCP Y-position in pixels relative to mixer container (read-only)
+   * I_MCPSCREENX : int * : current MCP X-position in pixels relative to screen (read-only)
    * I_FOLDERDEPTH : int * : folder depth change, 0=normal, 1=track is a folder parent, -1=track is the last in the innermost folder, -2=track is the last in the innermost and next-innermost folders, etc
    * I_FOLDERCOMPACT : int * : folder collapsed state (only valid on folders), 0=normal, 1=collapsed, 2=fully collapsed
    * I_MIDIHWOUT : int * : track midi hardware output index, <0=disabled, low 5 bits are which channels (0=all, 1-16), next 5 bits are output device index (0-31)
@@ -2390,9 +2475,11 @@ declare namespace reaper {
    * P_ENV:<envchunkname or P_ENV:{GUID... : TrackEnvelope * : (read-only) chunkname can be <VOLENV, <PANENV, etc; GUID is the stringified envelope GUID.
    * B_SHOWINMIXER : bool * : track control panel visible in mixer (do not use on master track)
    * B_SHOWINTCP : bool * : track control panel visible in arrange view (do not use on master track)
+   * B_TCPPIN : bool * : track is pinned to top of arrange view
    * B_MAINSEND : bool * : track sends audio to parent
    * C_MAINSEND_OFFS : char * : channel offset of track send to parent
    * C_MAINSEND_NCH : char * : channel count of track send to parent (0=use all child track channels, 1=use one channel only)
+   * I_FREEZECOUNT : int * : (read-only) freeze state count
    * I_FREEMODE : int * : 1=track free item positioning enabled, 2=track fixed lanes enabled (call UpdateTimeline() after changing)
    * I_NUMFIXEDLANES : int * : number of track fixed lanes (fine to call with setNewValue, but returned value is read-only)
    * C_LANESCOLLAPSED : char * : fixed lane collapse state (1=lanes collapsed, 2=track displays as non-fixed-lanes but hidden lanes exist)
@@ -2429,11 +2516,33 @@ declare namespace reaper {
 
   /**
    * ```
+   * boolean retval, string nameout = reaper.GetMIDIInputNameNoAlias(integer dev, string nameout)
+   * ```
+   * returns true if device present
+   */
+  function GetMIDIInputNameNoAlias(
+    dev: number,
+    nameout: string,
+  ): LuaMultiReturn<[boolean, string]>;
+
+  /**
+   * ```
    * boolean retval, string nameout = reaper.GetMIDIOutputName(integer dev, string nameout)
    * ```
    * returns true if device present
    */
   function GetMIDIOutputName(
+    dev: number,
+    nameout: string,
+  ): LuaMultiReturn<[boolean, string]>;
+
+  /**
+   * ```
+   * boolean retval, string nameout = reaper.GetMIDIOutputNameNoAlias(integer dev, string nameout)
+   * ```
+   * returns true if device present
+   */
+  function GetMIDIOutputNameNoAlias(
     dev: number,
     nameout: string,
   ): LuaMultiReturn<[boolean, string]>;
@@ -2457,6 +2566,8 @@ declare namespace reaper {
    * or built-in REAPER command ID, or the custom action ID string.
    *
    * Note: the action string may have a space and 'c' or 'm' appended to it to specify command ID vs mouse modifier ID.
+   *
+   * You can add the 1024 bit to the flag, which will allow you to retrieve the no-move or no-select bits of the assignment, if the assignment is an action ID.
    *
    * See SetMouseModifier for more information.
    */
@@ -2951,6 +3062,8 @@ declare namespace reaper {
    *
    * P_EXT:xyz : char * : extension-specific persistent data
    *
+   * P_EXT:ORIGINAL_FILENAME : char * : if media was copied on import, this will be set to the original filename
+   *
    * GUID : GUID * : 16-byte GUID, can query or update. If using a _String() function, GUID is a string {xyz-...}.
    */
   function GetSetMediaItemTakeInfo_String(
@@ -3030,7 +3143,7 @@ declare namespace reaper {
    * ```
    * Get or set project information.
    *
-   * RENDER_SETTINGS : &(1|2)=0:master mix, &1=stems+master mix, &2=stems only, &4=multichannel tracks to multichannel files, &8=use render matrix, &16=tracks with only mono media to mono files, &32=selected media items, &64=selected media items via master, &128=selected tracks via master, &256=embed transients if format supports, &512=embed metadata if format supports, &1024=embed take markers if format supports, &2048=2nd pass render
+   * RENDER_SETTINGS : (&(1|2)==0)=master mix, &1=stems+master mix, &2=stems only, &4=multichannel tracks to multichannel files, &8=use render matrix, &16=tracks with only mono media to mono files, &32=selected media items, &64=selected media items via master, &128=selected tracks via master, &256=embed transients if format supports, &512=embed metadata if format supports, &1024=embed take markers if format supports, &2048=2nd pass render, &4096=render razor edits, &8192=pre-fader stems (not if via master), &16384=only stem channels sent to parent, &32768=preserve source metadata if possible, &(1<<16)=preserve source start offset if possible, &(2<<16)=preserve source media sample rate if possible, &(4<<16)=if rendering selected items or razor edits, render as a single file, &(8<<16)=parallel render via master, &(16<<16)=delay render start to allow FX to initialize and load samples
    *
    * RENDER_BOUNDSFLAG : 0=custom time bounds, 1=entire project, 2=time selection, 3=all project regions, 4=selected media items, 5=selected project regions, 6=all project markers, 7=selected project markers
    *
@@ -3048,13 +3161,13 @@ declare namespace reaper {
    *
    * RENDER_ADDTOPROJ : &1=add rendered files to project, &2=do not render files that are likely silent
    *
-   * RENDER_DITHER : &1=dither, &2=noise shaping, &4=dither stems, &8=noise shaping on stems
+   * RENDER_DITHER : &1=dither, &2=noise shaping, &4=dither stems, &8=noise shaping on stems, &16=disable all
    *
-   * RENDER_NORMALIZE: &1=enable, (&14==0)=LUFS-I, (&14==2)=RMS, (&14==4)=peak, (&14==6)=true peak, (&14==8)=LUFS-M max, (&14==10)=LUFS-S max, (&4128==32)=normalize stems to common gain based on master, &64=enable brickwall limit, &128=brickwall limit true peak, (&2304==256)=only normalize files that are too loud, (&2304==2048)=only normalize files that are too quiet, &512=apply fade-in, &1024=apply fade-out, (&4128==4096)=normalize to loudest file, (&4128==4128)=normalize as if one long file, &8192=adjust mono media additional -3dB
+   * RENDER_NORMALIZE: &1=enable normalization, (&14==0)=LUFS-I, (&14==2)=RMS, (&14==4)=peak, (&14==6)=true peak, (&14==8)=LUFS-M max, (&14==10)=LUFS-S max, &16=adjust mono media -3dB, &(16|(8<<16))=adjust mono media +3dB, (&(32|4096|(16<<16))==32)=normalize as if files play together, (&(32|4096|(16<<16))==4096)=normalize to loudest file, (&(32|4096|(16<<16))==(32|4096))=normalize as if files play together (common gain), (&(32|4096|(16<<16))==(16<<16))=normalize to master mix, &64=enable brickwall limit, &128=brickwall limit true peak, (&(256|2048)==256)=only normalize files that are too loud, (&(256|2048)==2048)=only normalize files that are too quiet, &512=apply fade-in, &1024=apply fade-out, &16384=trim starting silence, &32768=trim ending silence, &(1<<16)=pad start with silence, &(2<<16)=pad end with silence, &(4<<16)=disable all render postprocessing, (&((32<<16)|(64<<16))==(32<<16))=limit as if files play together, (&((32<<16)|(64<<16))==(64<<16))=limit to master mix
    *
-   * RENDER_NORMALIZE_TARGET: render normalization target as amplitude, so 0.5 means -6.02dB, 0.25 means -12.04dB, etc
+   * RENDER_NORMALIZE_TARGET: render normalization target (0.5 means -6.02dB, requires RENDER_NORMALIZE&1)
    *
-   * RENDER_BRICKWALL: render brickwall limit as amplitude, so 0.5 means -6.02dB, 0.25 means -12.04dB, etc
+   * RENDER_BRICKWALL: render brickwall limit (0.5 means -6.02dB, requires RENDER_NORMALIZE&64)
    *
    * RENDER_FADEIN: render fade-in (0.001 means 1 ms, requires RENDER_NORMALIZE&512)
    *
@@ -3064,9 +3177,23 @@ declare namespace reaper {
    *
    * RENDER_FADEOUTSHAPE: render fade-out shape
    *
+   * RENDER_FADELPF: render low pass frequency fade, &1=fade-in, &2=fade-out
+   *
+   * RENDER_PADSTART: pad render start with silence (0.001 means 1ms, requires RENDER_NORMALIZE&(1<<16))
+   *
+   * RENDER_PADEND: pad render end with silence (0.001 means 1ms, requires RENDER_NORMALIZE&(2<<16))
+   *
+   * RENDER_TRIMSTART: trim render start threshold (0.5 means -6.02dB, requires RENDER_NORMALIZE&16384)
+   *
+   * RENDER_TRIMEND: trim render end threshold (0.5 means -6.02dB, requires RENDER_NORMALIZE&32768)
+   *
+   * RENDER_DELAY: seconds to delay start of render to allow FX to initialize and load samples (requires RENDER_SETTINGS&(16<<16))
+   *
    * PROJECT_SRATE : sample rate (ignored unless PROJECT_SRATE_USE set)
    *
    * PROJECT_SRATE_USE : set to 1 if project sample rate is used
+   *
+   * PROJECT_TIMEBASE : 0=time, 1=beats position, length, rate, 2=beats position only (read-only)PROJECT_TIMEBASE_FLAGS : &1=timebase affects MIDI items, &2=in beats timebase, auto-stretch media items at tempo changes (read-only)PROJECT_TCP_UI_FLAGS : &1=pinning tracks to top of arrange view is overridden, &2=hiding tracks in arrange view is overridden
    */
   function GetSetProjectInfo(
     project: ReaProject,
@@ -3103,9 +3230,13 @@ declare namespace reaper {
    *
    * APPLYFX_FORMAT : base64-encoded sink configuration (see project files, etc). Used only if RECFMT_OPENCOPY is set to 1. Callers can also pass a simple 4-byte string (non-base64-encoded), e.g. "evaw" or "l3pm", to use default settings for that sink type.
    *
+   * RECTAG : project recording tag wildcard ($rectag). Can be used in Preferences/Audio/Recording to auto-name recorded files.
+   *
    * RENDER_FILE : render directory
    *
    * RENDER_PATTERN : render file name (may contain wildcards)
+   *
+   * RENDER_EXTRAFILEDIR : alternate path for renderedfile.wav.rpp and render_stats.html
    *
    * RENDER_METADATA : get or set the metadata saved with the project (not metadata embedded in project media). Example, ID3 album name metadata: valuestr="ID3:TALB" to get, valuestr="ID3:TALB|my album name" to set. Call with valuestr="" and is_set=false to get a semicolon-separated list of defined project metadata identifiers.
    *
@@ -3561,7 +3692,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.GetToggleCommandStateEx(integer section_id, integer command_id)
    * ```
-   * For the main action context, the MIDI editor, or the media explorer, returns the toggle state of the action. 0=off, 1=on, -1=NA because the action does not have on/off states. For the MIDI editor, the action state for the most recently focused window will be returned.
+   * Returns the toggle state of the action. section 0=main, 100=main alt, 32060=MIDI editor, 32061=MIDI event list editor, 32062=MIDI inline editor (toggle feedback not supported), 32063=Media Explorer, 32065=Crossfade Editor. Returns 0=off, 1=on, -1=NA because the action does not have on/off states. For the MIDI editor, the action state for the most recently focused window will be returned.
    */
   function GetToggleCommandStateEx(
     section_id: number,
@@ -3681,7 +3812,7 @@ declare namespace reaper {
    * ```
    * boolean retval, string buf = reaper.GetTrackMIDILyrics(MediaTrack track, integer flag)
    * ```
-   * Get all MIDI lyrics on the track. Lyrics will be returned as one string with tabs between each word. flag&1: double tabs at the end of each measure and triple tabs when skipping measures, flag&2: each lyric is preceded by its beat position in the project (example with flag=2: "1.1.2\tLyric for measure 1 beat 2\t2.1.1\tLyric for measure 2 beat 1	"). See SetTrackMIDILyrics
+   * Get all MIDI lyrics on the track. Lyrics will be returned as one string with tabs between each word. flag&1: double tabs at the end of each measure and triple tabs when skipping measures, flag&2: each lyric is preceded by its beat position in the project (example with flag=2: "1.1.2\tLyric for measure 1 beat 2\t2.1.1\tLyric for measure 2 beat 1 "). See SetTrackMIDILyrics
    */
   function GetTrackMIDILyrics(
     track: MediaTrack,
@@ -4101,7 +4232,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.InsertMedia(string file, integer mode)
    * ```
-   * mode: 0=add to current track, 1=add new track, 3=add to selected items as takes, &4=stretch/loop to fit time sel, &8=try to match tempo 1x, &16=try to match tempo 0.5x, &32=try to match tempo 2x, &64=don't preserve pitch when matching tempo, &128=no loop/section if startpct/endpct set, &256=force loop regardless of global preference for looping imported items, &512=use high word as absolute track index if mode&3==0 or mode&2048, &1024=insert into reasamplomatic on a new track (add 1 to insert on last selected track), &2048=insert into open reasamplomatic instance (add 512 to use high word as absolute track index), &4096=move to source preferred position (BWF start offset), &8192=reverse
+   * mode: 0=add to current track, 1=add new track, 3=add to selected items as takes, &4=stretch/loop to fit time sel, &8=try to match tempo 1x, &16=try to match tempo 0.5x, &32=try to match tempo 2x, &64=don't preserve pitch when matching tempo, &128=no loop/section if startpct/endpct set, &256=force loop regardless of global preference for looping imported items, &512=use high word as absolute track index if mode&3==0 or mode&2048, &1024=insert into reasamplomatic on a new track (add 1 to insert on last selected track), &2048=insert into open reasamplomatic instance (add 512 to use high word as absolute track index), &4096=move to source preferred position (BWF start offset), &8192=reverse. &16384=apply ripple according to project setting
    */
   function InsertMedia(file: string, mode: number): number;
 
@@ -4341,7 +4472,7 @@ declare namespace reaper {
    * ```
    * reaper.Main_SaveProjectEx(ReaProject proj, string filename, integer options)
    * ```
-   * Save the project. options: &1=save selected tracks as track template, &2=include media with track template, &4=include envelopes with track template. See Main_openProject, Main_SaveProject.
+   * Save the project. options: &1=save selected tracks as track template, &2=include media with track template, &4=include envelopes with track template, &8=if not saving template, set as the new project filename for this ReaProject. See Main_openProject, Main_SaveProject.
    */
   function Main_SaveProjectEx(
     proj: ReaProject,
@@ -4419,6 +4550,27 @@ declare namespace reaper {
    * type 0=OK,1=OKCANCEL,2=ABORTRETRYIGNORE,3=YESNOCANCEL,4=YESNO,5=RETRYCANCEL : ret 1=OK,2=CANCEL,3=ABORT,4=RETRY,5=IGNORE,6=YES,7=NO
    */
   function MB(msg: string, title: string, type: number): number;
+
+  /**
+   * ```
+   * boolean retval, string filename, integer filemode, number selstart, number selend, number pitchshift, number voladj, number rateadj, number sourcebpm, string extrainfo = reaper.MediaExplorerGetLastPlayedFileInfo()
+   * ```
+   * Get information about the most recently previewed Media Explorer file. filename: last played file name. filemode: &1:insert on new track, &2:insert into sampler, &8:tempo sync 1x, &16:tempo sync 0.5x, &32:tempo sync 2x, &64:do not preserve pitch when changing playrate, &128:loop selection exists, &256:time selection exists, &512:apply pitch/rate adjustment on insert, &1024:apply volume adjustment on insert, &2048:apply normalization on insert, &8192:reverse preview. startpct/endpct: time selection in [0.0, 1.0]. pitchshift/voladj/rateadj: current pitch/volume/playrate preview adjustments. srcbpm: source media tempo. extrainfo: currently unused.
+   */
+  function MediaExplorerGetLastPlayedFileInfo(): LuaMultiReturn<
+    [
+      boolean,
+      string,
+      number,
+      number,
+      number,
+      number,
+      number,
+      number,
+      number,
+      string,
+    ]
+  >;
 
   /**
    * ```
@@ -5004,7 +5156,7 @@ declare namespace reaper {
    *
    * active_note_row: returns 0-127
    *
-   * last_clicked_cc_lane: returns 0-127=CC, 0x100|(0-31)=14-bit CC, 0x200=velocity, 0x201=pitch, 0x202=program, 0x203=channel pressure, 0x204=bank/program select, 0x205=text, 0x206=sysex, 0x207=off velocity, 0x208=notation events, 0x210=media item lane
+   * last_clicked_cc_lane: returns 0-127=CC, 0x100|(0-31)=14-bit CC, 0x200=velocity, 0x201=pitch, 0x202=program, 0x203=channel pressure, 0x204=bank/program select, 0x205=text, 0x206=sysex, 0x207=off velocity, 0x208=notation events, 0x209=aftertouch, 0x210=media item lane
    *
    * default_note_vel: returns 0-127
    *
@@ -5535,6 +5687,19 @@ declare namespace reaper {
 
   /**
    * ```
+   * string resolvedString = reaper.ResolveWildcards(ReaProject project, number timePosition, string wildcards, string resolvedString)
+   * ```
+   * Resolve a wildcard string. Any wildcards that are valid in the Big Clock can be resolved using this function. Pass in timePosition=-1 to use the current project playback position.
+   */
+  function ResolveWildcards(
+    project: ReaProject,
+    timePosition: number,
+    wildcards: string,
+    resolvedString: string,
+  ): string;
+
+  /**
+   * ```
    * string _ = reaper.ReverseNamedCommandLookup(integer command_id)
    * ```
    * Get the named command for the given command ID. The returned string will not start with '_' (e.g. it will return "SWS_ABOUT"), it will be NULL if command_id is a native action.
@@ -5682,6 +5847,8 @@ declare namespace reaper {
    *
    * Otherwise, ptidx will be based on the number of visible points in the automation item, including all loop iterations.
    *
+   * Prior to REAPER v7.46, this function interpreted the 0x10000000 autoitem_idx flag backwards.
+   *
    * See CountEnvelopePointsEx, GetEnvelopePointEx, InsertEnvelopePointEx, DeleteEnvelopePointEx.
    */
   function SetEnvelopePointEx(
@@ -5712,7 +5879,7 @@ declare namespace reaper {
    * ```
    * reaper.SetExtState(string section, string key, string value, boolean persist)
    * ```
-   * Set the extended state value for a specific section and key. persist=true means the value should be stored and reloaded the next time REAPER is opened. See GetExtState, DeleteExtState, HasExtState.
+   * Set the extended state value for a specific section and key. persist=true means the value should be stored and reloaded the next time REAPER is opened. Note that with persist=true set, the value will be encoded as a text line in an .ini file and may behaved in unexpected ways if it contains any newlines: do not pass a string with newlines to this function. To save arbitrary data persistently, use base64 encoding or similar. See GetExtState, DeleteExtState, HasExtState.
    */
   function SetExtState(
     section: string,
@@ -5798,6 +5965,8 @@ declare namespace reaper {
    * C_FADEINSHAPE : int * : fadein shape, 0..6, 0=linear
    *
    * C_FADEOUTSHAPE : int * : fadeout shape, 0..6, 0=linear
+   *
+   * I_FADELPF : int * : low pass frequency fade, &1=fade-in, &2=fade-out
    *
    * I_GROUPID : int * : group ID, 0=no group
    *
@@ -5909,6 +6078,64 @@ declare namespace reaper {
    *
    * I_CUSTOMCOLOR : int * : custom color, OS dependent color|0x1000000 (i.e. ColorToNative(r,g,b)|0x1000000). If you do not |0x1000000, then it will not be used, but will store the color
    *
+   * IP_SPECEDIT:CNT : int : spectral edit count (read-only)
+   *
+   * IP_SPECEDIT:DELETE:x : int : read or write this key to remove the spectral edit specified
+   *
+   * IP_SPECEDIT:ADD : int : read or write this key to add a new spectral edit (returns index)
+   *
+   * IP_SPECEDIT:SORT : int : read or write this key to re-sort spectral edits (be sure to do this following a position change or insert of new edit)
+   *
+   * I_SPECEDIT:FFT_SIZE : int * : FFT size used by spectral edits for this take
+   *
+   * D_SPECEDIT:x:POSITION : double * : position of spectral edit start (changing this requires a resort of spectral edits)
+   *
+   * D_SPECEDIT:x:LENGTH : double * : length of spectral edit
+   *
+   * F_SPECEDIT:x:GAIN : float * : gain of spectral edit
+   *
+   * F_SPECEDIT:x:FADE_IN : float * : fade-in size 0..1
+   *
+   * F_SPECEDIT:x:FADE_OUT : float * : fade-out size 0..1
+   *
+   * F_SPECEDIT:x:FADE_LOW : float * : fade-lf size 0..1
+   *
+   * F_SPECEDIT:x:FADE_HI : float * : fade-hf size 0..1
+   *
+   * I_SPECEDIT:x:CHAN : int * : channel index, -1 for omni
+   *
+   * I_SPECEDIT:x:FLAGS : int * : flags, &1=bypassed, &2=solo
+   *
+   * F_SPECEDIT:x:GATE_THRESH : float * : gate threshold
+   *
+   * F_SPECEDIT:x:GATE_FLOOR : float * : gate floor
+   *
+   * F_SPECEDIT:x:COMP_THRESH : float * : comp threshold
+   *
+   * F_SPECEDIT:x:COMP_RATIO : float * : comp ratio
+   *
+   * B_SPECEDIT:x:SELECTED : bool * : selection state
+   *
+   * I_SPECEDIT:x:TOPFREQ_CNT : int * : (read-only) number of top frequency-points
+   *
+   * I_SPECEDIT:x:TOPFREQ_ADD:pos:val : int * : reading or writing will insert top frequency-point with position/value pair, returns index
+   *
+   * I_SPECEDIT:x:TOPFREQ_DEL:y : int * : reading or writing will delete top frequency-point y. there will always be at least one point.
+   *
+   * F_SPECEDIT:x:TOPFREQ_POS:y : float * : (read-only) get position of top frequency-point y
+   *
+   * F_SPECEDIT:x:TOPFREQ_FREQ:y : float * : (read-only) get frequency of top frequency-point y
+   *
+   * I_SPECEDIT:x:BOTFREQ_CNT : int * : number of bottom frequency-points
+   *
+   * I_SPECEDIT:x:BOTFREQ_ADD:pos:val : int * : reading or writing will insert bottom frequency-point with position/value pair, returns index
+   *
+   * I_SPECEDIT:x:BOTFREQ_DEL:y : int * : reading or writing will delete bottom frequency-point y. there will always be at least one point.
+   *
+   * F_SPECEDIT:x:BOTFREQ_POS:y : float * : (read-only) get position of bottom frequency-point y
+   *
+   * F_SPECEDIT:x:BOTFREQ_FREQ:y : float * : (read-only) get frequency of bottom frequency-point y
+   *
    * IP_TAKENUMBER : int : take number (read-only, returns the take number directly)
    */
   function SetMediaItemTakeInfo_Value(
@@ -5959,19 +6186,23 @@ declare namespace reaper {
    *
    * I_SELECTED : int * : track selected, 0=unselected, 1=selected
    *
-   * I_WNDH : int * : current TCP window height in pixels including envelopes (read-only)
+   * I_WNDH : int * : current TCP height in pixels including envelopes (read-only)
    *
-   * I_TCPH : int * : current TCP window height in pixels not including envelopes (read-only)
+   * I_TCPH : int * : current TCP height in pixels not including envelopes (read-only)
    *
-   * I_TCPY : int * : current TCP window Y-position in pixels relative to top of arrange view (read-only)
+   * I_TCPY : int * : current TCP Y-position in pixels relative to top of arrange view (read-only)
+   *
+   * I_TCPSCREENY : int * : current TCP Y-position in pixels relative to screen (read-only)
+   *
+   * I_MCPW : int * : current MCP width in pixels (read-only)
+   *
+   * I_MCPH : int * : current MCP height in pixels (read-only)
    *
    * I_MCPX : int * : current MCP X-position in pixels relative to mixer container (read-only)
    *
    * I_MCPY : int * : current MCP Y-position in pixels relative to mixer container (read-only)
    *
-   * I_MCPW : int * : current MCP width in pixels (read-only)
-   *
-   * I_MCPH : int * : current MCP height in pixels (read-only)
+   * I_MCPSCREENX : int * : current MCP X-position in pixels relative to screen (read-only)
    *
    * I_FOLDERDEPTH : int * : folder depth change, 0=normal, 1=track is a folder parent, -1=track is the last in the innermost folder, -2=track is the last in the innermost and next-innermost folders, etc
    *
@@ -6015,11 +6246,15 @@ declare namespace reaper {
    *
    * B_SHOWINTCP : bool * : track control panel visible in arrange view (do not use on master track)
    *
+   * B_TCPPIN : bool * : track is pinned to top of arrange view
+   *
    * B_MAINSEND : bool * : track sends audio to parent
    *
    * C_MAINSEND_OFFS : char * : channel offset of track send to parent
    *
    * C_MAINSEND_NCH : char * : channel count of track send to parent (0=use all child track channels, 1=use one channel only)
+   *
+   * I_FREEZECOUNT : int * : (read-only) freeze state count
    *
    * I_FREEMODE : int * : 1=track free item positioning enabled, 2=track fixed lanes enabled (call UpdateTimeline() after changing)
    *
@@ -6057,7 +6292,7 @@ declare namespace reaper {
    * ```
    * reaper.SetMIDIEditorGrid(ReaProject project, number division)
    * ```
-   * Set the MIDI editor grid division. 0.25=quarter note, 1.0/3.0=half note tripet, etc.
+   * Set the MIDI editor grid division. 0.25=quarter note, 1.0/3.0=half note tripet, etc. Sets the swing enabled/strength from the arrange settings.
    */
   function SetMIDIEditorGrid(project: ReaProject, division: number): void;
 
@@ -6100,6 +6335,8 @@ declare namespace reaper {
    * SetMouseModifier(context, -1, -1) will reset the entire context to default.
    *
    * SetMouseModifier(-1, -1, -1) will reset all contexts to default.
+   *
+   * You can add the 1024 bit to flag, and use this to set the no-move (1) and/or no-select (2) values for an action ID, after the command modifier was set.
    *
    * See GetMouseModifier.
    */
@@ -6208,7 +6445,7 @@ declare namespace reaper {
    * ```
    * boolean _ = reaper.SetProjectMarkerByIndex2(ReaProject proj, integer markrgnidx, boolean isrgn, number pos, number rgnend, integer IDnumber, string name, integer color, integer flags)
    * ```
-   * Differs from SetProjectMarker4 in that markrgnidx is 0 for the first marker/region, 1 for the next, etc (see EnumProjectMarkers3), rather than representing the displayed marker/region ID number (see SetProjectMarker3). Function will fail if attempting to set a duplicate ID number for a region (duplicate ID numbers for markers are OK). , flags&1 to clear name. If flags&2, markers will not be re-sorted, and after making updates, you MUST call SetProjectMarkerByIndex2 with markrgnidx=-1 and flags&2 to force re-sort/UI updates.
+   * Differs from SetProjectMarker4 in that markrgnidx is 0 for the first marker/region, 1 for the next, etc (see EnumProjectMarkers3), rather than representing the displayed marker/region ID number (see SetProjectMarker3). IDnumber < 0 to ignore. Function will fail if attempting to set a duplicate ID number for a region (duplicate ID numbers for markers are OK). flags&1 to clear name. If flags&2, markers will not be re-sorted, and after making updates, you MUST call SetProjectMarkerByIndex2 with markrgnidx=-1 and flags&2 to force re-sort/UI updates.
    */
   function SetProjectMarkerByIndex2(
     proj: ReaProject,
@@ -6313,39 +6550,39 @@ declare namespace reaper {
    *
    * col_main_bg2 : Main window/transport background
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * col_main_text2 : Main window/transport text
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 147,146,147
    *
    * col_main_textshadow : Main window text shadow (ignored if too close to text color)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * col_main_3dhl : Main window 3D highlight
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * col_main_3dsh : Main window 3D shadow
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * col_main_resize2 : Main window pane resize mouseover
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 147,146,147
    *
    * col_main_text : Themed window text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * col_main_bg : Themed window background
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 34,31,34
    *
    * col_main_editbk : Themed window edit background
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * col_nodarkmodemiscwnd : Do not use window theming on macOS dark mode
    *
@@ -6353,11 +6590,11 @@ declare namespace reaper {
    *
    * col_transport_editbk : Transport edit background
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * col_toolbar_text : Toolbar button text
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 193,192,192
    *
    * col_toolbar_text_on : Toolbar button enabled text
    *
@@ -6377,43 +6614,43 @@ declare namespace reaper {
    *
    * io_text : I/O window text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * io_3dhl : I/O window 3D highlight
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 114,112,114
    *
    * io_3dsh : I/O window 3D shadow
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 114,112,114
    *
    * genlist_bg : Window list background
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 45,42,46
    *
    * genlist_fg : Window list text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * genlist_grid : Window list grid lines
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 91,89,92
    *
    * genlist_selbg : Window list selected row
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 120,220,232
    *
    * genlist_selfg : Window list selected text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 25,24,26
    *
    * genlist_seliabg : Window list selected row (inactive)
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 193,192,192
    *
    * genlist_seliafg : Window list selected text (inactive)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 25,24,26
    *
    * genlist_hilite : Window list highlighted text
    *
@@ -6429,23 +6666,23 @@ declare namespace reaper {
    *
    * col_tcp_text : Track panel text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * col_tcp_textsel : Track panel (selected) text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * col_seltrack : Selected track control panel background
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 54,52,56
    *
    * col_seltrack2 : Unselected track control panel background (enabled with a checkbox above)
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 45,42,46
    *
    * tcplocked_color : Locked track control panel overlay color
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * tcplocked_drawmode : Locked track control panel fill mode
    *
@@ -6453,47 +6690,67 @@ declare namespace reaper {
    *
    * col_tracklistbg : Empty track list area
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * col_mixerbg : Empty mixer list area
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * col_arrangebg : Empty arrange view area
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 34,31,34
    *
    * arrange_vgrid : Empty arrange view area vertical grid shading
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 34,31,34
+   *
+   * tcp_pinned_track_gap : Track panel color between pinned and unpinned tracks
+   *
+   * -- current RGB: 40,40,40
+   *
+   * tcp_pinned_track_gap_unreachable : Track panel color between pinned and unpinned tracks when some tracks are unreachable
+   *
+   * -- current RGB: 255,64,64
+   *
+   * tcp_pinned_track_gap_mode : Track panel fill mode between pinned and unpinned tracks
+   *
+   * -- blendmode 00028000
+   *
+   * pinned_track_gap : Arrange view color between pinned and unpinned tracks
+   *
+   * -- current RGB: 40,40,40
+   *
+   * pinned_track_gap_mode : Arrange view fill mode between pinned and unpinned tracks
+   *
+   * -- blendmode 00028000
    *
    * col_fadearm : Fader background when automation recording
    *
-   * -- current RGB: 242,119,122
+   * -- current RGB: 255,97,136
    *
    * col_fadearm2 : Fader background when automation playing
    *
-   * -- current RGB: 153,204,153
+   * -- current RGB: 169,220,118
    *
    * col_fadearm3 : Fader background when in inactive touch/latch
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 171,157,242
    *
    * col_tl_fg : Timeline foreground
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 147,146,147
    *
    * col_tl_fg2 : Timeline foreground (secondary markings)
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 91,89,92
    *
    * col_tl_bg : Timeline background
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * col_tl_bgsel : Time selection color
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 252,252,250
    *
    * timesel_drawmode : Time selection fill mode
    *
@@ -6501,7 +6758,7 @@ declare namespace reaper {
    *
    * col_tl_bgsel2 : Timeline background (in loop points)
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 114,112,114
    *
    * col_trans_bg : Transport status background
    *
@@ -6521,35 +6778,35 @@ declare namespace reaper {
    *
    * col_mi_label : Media item label
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 64,62,65
    *
    * col_mi_label_sel : Media item label (selected)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 64,62,65
    *
    * col_mi_label_float : Floating media item label
    *
-   * -- current RGB: 160,159,147
+   * -- current RGB: 147,146,147
    *
    * col_mi_label_float_sel : Floating media item label (selected)
    *
-   * -- current RGB: 160,159,147
+   * -- current RGB: 147,146,147
    *
    * col_mi_bg2 : Media item background (odd tracks)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 221,220,220
    *
    * col_mi_bg : Media item background (even tracks)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 221,220,220
    *
    * col_tr1_itembgsel : Media item background selected (odd tracks)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * col_tr2_itembgsel : Media item background selected (even tracks)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * itembg_drawmode : Media item background fill mode
    *
@@ -6557,35 +6814,35 @@ declare namespace reaper {
    *
    * col_tr1_peaks : Media item peaks (odd tracks)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 54,52,56
    *
    * col_tr2_peaks : Media item peaks (even tracks)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 54,52,56
    *
    * col_tr1_ps2 : Media item peaks when selected (odd tracks)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 54,52,56
    *
    * col_tr2_ps2 : Media item peaks when selected (even tracks)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 54,52,56
    *
    * col_peaksedge : Media item peaks edge highlight (odd tracks)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 114,112,114
    *
    * col_peaksedge2 : Media item peaks edge highlight (even tracks)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 114,112,114
    *
    * col_peaksedgesel : Media item peaks edge highlight when selected (odd tracks)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 114,112,114
    *
    * col_peaksedgesel2 : Media item peaks edge highlight when selected (even tracks)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 114,112,114
    *
    * cc_chase_drawmode : Media item MIDI CC peaks fill mode
    *
@@ -6593,19 +6850,19 @@ declare namespace reaper {
    *
    * col_peaksfade : Media item peaks when active in crossfade editor (fade-out)
    *
-   * -- current RGB: 102,153,204
+   * -- current RGB: 171,157,242
    *
    * col_peaksfade2 : Media item peaks when active in crossfade editor (fade-in)
    *
-   * -- current RGB: 242,119,122
+   * -- current RGB: 252,152,103
    *
    * col_mi_fades : Media item fade/volume controls
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 25,24,26
    *
    * fadezone_color : Media item fade quiet zone fill color
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 45,42,46
    *
    * fadezone_drawmode : Media item fade quiet zone fill mode
    *
@@ -6613,47 +6870,71 @@ declare namespace reaper {
    *
    * fadearea_color : Media item fade full area fill color
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 45,42,46
    *
    * fadearea_drawmode : Media item fade full area fill mode
    *
    * -- blendmode 00020000
    *
+   * lpffadecol : Media item LPF fade color
+   *
+   * -- current RGB: 0,255,0
+   *
+   * lpffademode : Media item LPF fade fill mode
+   *
+   * -- blendmode 00028000
+   *
+   * col_mi_left : Media item left edge overlay
+   *
+   * -- current RGB: 0,0,0
+   *
+   * col_mi_leftb : Media item left edge overlay blend mode
+   *
+   * -- blendmode 00028000
+   *
+   * col_mi_leftsel : Media item left edge overlay (selected)
+   *
+   * -- current RGB: 255,255,255
+   *
+   * col_mi_leftselb : Media item left edge overlay blend mode (selected)
+   *
+   * -- blendmode 00028000
+   *
    * col_mi_fade2 : Media item edges of controls
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 114,112,114
    *
    * col_mi_fade2_drawmode : Media item edges of controls blend mode
    *
-   * -- blendmode 00024000
+   * -- blendmode 00028000
    *
    * item_grouphl : Media item edge when selected via grouping
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 171,157,242
    *
    * col_offlinetext : Media item "offline" text
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 114,112,114
    *
    * col_stretchmarker : Media item stretch marker line
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 114,112,114
    *
    * col_stretchmarker_h0 : Media item stretch marker handle (1x)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 114,112,114
    *
    * col_stretchmarker_h1 : Media item stretch marker handle (>1x)
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * col_stretchmarker_h2 : Media item stretch marker handle (<1x)
    *
-   * -- current RGB: 102,204,204
+   * -- current RGB: 120,220,232
    *
    * col_stretchmarker_b : Media item stretch marker handle edge
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 25,24,26
    *
    * col_stretchmarkerm : Media item stretch marker blend mode
    *
@@ -6661,19 +6942,19 @@ declare namespace reaper {
    *
    * col_stretchmarker_text : Media item stretch marker text
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 114,112,114
    *
    * col_stretchmarker_tm : Media item transient guide handle
    *
-   * -- current RGB: 160,159,147
+   * -- current RGB: 193,192,192
    *
    * take_marker : Media item take marker
    *
-   * -- current RGB: 242,119,122
+   * -- current RGB: 255,97,136
    *
    * take_marker_sel : Media item take marker when item selected
    *
-   * -- current RGB: 115,109,9
+   * -- current RGB: 255,97,136
    *
    * selitem_tag : Selected media item bar color
    *
@@ -6685,59 +6966,59 @@ declare namespace reaper {
    *
    * col_tr1_bg : Track background (odd tracks)
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 45,42,46
    *
    * col_tr2_bg : Track background (even tracks)
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 45,42,46
    *
    * selcol_tr1_bg : Selected track background (odd tracks)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 54,52,56
    *
    * selcol_tr2_bg : Selected track background (even tracks)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 54,52,56
    *
    * track_lane_tabcol : Track fixed lane button
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 64,62,65
    *
    * track_lanesolo_tabcol : Track fixed lane button when only this lane plays
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 255,216,102
    *
    * track_lanesolo_text : Track fixed lane button text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 193,192,192
    *
    * track_lane_gutter : Track fixed lane add area
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 252,252,250
    *
    * track_lane_gutter_drawmode : Track fixed lane add fill mode
    *
-   * -- blendmode 00023300
+   * -- blendmode 00021600
    *
    * col_tr1_divline : Track divider line (odd tracks)
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * col_tr2_divline : Track divider line (even tracks)
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * col_envlane1_divline : Envelope lane divider line (odd tracks)
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * col_envlane2_divline : Envelope lane divider line (even tracks)
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * mute_overlay_col : Muted/unsoloed track/item overlay color
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 34,31,34
    *
    * mute_overlay_mode : Muted/unsoloed track/item overlay mode
    *
@@ -6745,7 +7026,7 @@ declare namespace reaper {
    *
    * inactive_take_overlay_col : Inactive take/lane overlay color
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 45,42,46
    *
    * inactive_take_overlay_mode : Inactive take/lane overlay mode
    *
@@ -6753,7 +7034,7 @@ declare namespace reaper {
    *
    * locked_overlay_col : Locked track/item overlay color
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * locked_overlay_mode : Locked track/item overlay mode
    *
@@ -6769,7 +7050,7 @@ declare namespace reaper {
    *
    * marquee_outline : Marquee outline
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 252,252,250
    *
    * marqueezoom_fill : Marquee zoom fill
    *
@@ -6781,11 +7062,11 @@ declare namespace reaper {
    *
    * marqueezoom_outline : Marquee zoom outline
    *
-   * -- current RGB: 153,204,153
+   * -- current RGB: 169,220,118
    *
    * areasel_fill : Razor edit area fill
    *
-   * -- current RGB: 102,204,204
+   * -- current RGB: 120,220,232
    *
    * areasel_drawmode : Razor edit area fill mode
    *
@@ -6793,7 +7074,7 @@ declare namespace reaper {
    *
    * areasel_outline : Razor edit area outline
    *
-   * -- current RGB: 102,204,204
+   * -- current RGB: 120,220,232
    *
    * areasel_outlinemode : Razor edit area outline mode
    *
@@ -6801,15 +7082,15 @@ declare namespace reaper {
    *
    * linkedlane_fill : Fixed lane comp area fill
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 252,252,250
    *
    * linkedlane_fillmode : Fixed lane comp area fill mode
    *
-   * -- blendmode 00030000
+   * -- blendmode 00020d00
    *
    * linkedlane_outline : Fixed lane comp area outline
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * linkedlane_outlinemode : Fixed lane comp area outline mode
    *
@@ -6817,7 +7098,7 @@ declare namespace reaper {
    *
    * linkedlane_unsynced : Fixed lane comp lane unsynced media item
    *
-   * -- current RGB: 102,153,204
+   * -- current RGB: 120,220,232
    *
    * linkedlane_unsynced_mode : Fixed lane comp lane unsynced media item mode
    *
@@ -6825,15 +7106,15 @@ declare namespace reaper {
    *
    * col_cursor : Edit cursor
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 255,216,102
    *
    * col_cursor2 : Edit cursor (alternate)
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 255,216,102
    *
    * playcursor_color : Play cursor
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 255,216,102
    *
    * playcursor_drawmode : Play cursor mode
    *
@@ -6841,31 +7122,31 @@ declare namespace reaper {
    *
    * col_gridlines2 : Grid lines (start of measure)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 114,112,114
    *
    * col_gridlines2dm : Grid lines (start of measure) - draw mode
    *
-   * -- blendmode 00021a00
+   * -- blendmode 00026600
    *
    * col_gridlines3 : Grid lines (start of beats)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 114,112,114
    *
    * col_gridlines3dm : Grid lines (start of beats) - draw mode
    *
-   * -- blendmode 00020d00
+   * -- blendmode 00024000
    *
    * col_gridlines : Grid lines (in between beats)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 114,112,114
    *
    * col_gridlines1dm : Grid lines (in between beats) - draw mode
    *
-   * -- blendmode 00020800
+   * -- blendmode 00022600
    *
    * guideline_color : Editing guide line
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 252,252,250
    *
    * guideline_drawmode : Editing guide mode
    *
@@ -6881,15 +7162,15 @@ declare namespace reaper {
    *
    * region : Regions
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 64,62,65
    *
    * region_lane_bg : Region lane background
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * region_lane_text : Region text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 193,192,192
    *
    * region_edge : Region edge
    *
@@ -6901,15 +7182,15 @@ declare namespace reaper {
    *
    * marker : Markers
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 91,89,92
    *
    * marker_lane_bg : Marker lane background
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * marker_lane_text : Marker text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 193,192,192
    *
    * marker_edge : Marker edge
    *
@@ -6921,19 +7202,19 @@ declare namespace reaper {
    *
    * col_tsigmark : Time signature change marker
    *
-   * -- current RGB: 210,123,83
+   * -- current RGB: 252,152,103
    *
    * ts_lane_bg : Time signature lane background
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * ts_lane_text : Time signature lane text
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 147,146,147
    *
    * timesig_sel_bg : Time signature marker selected background
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 91,89,92
    *
    * col_routinghl1 : Routing matrix row highlight
    *
@@ -6955,6 +7236,14 @@ declare namespace reaper {
    *
    * -- current RGB: 187,37,0
    *
+   * col_vudbscale : VU meters dB scales (not record armed)
+   *
+   * -- bool 00000001
+   *
+   * col_vudbscale2 : VU meters dB scales (record armed)
+   *
+   * -- bool 00000001
+   *
    * col_vutop : VU meter top
    *
    * -- current RGB: 0,254,149
@@ -6969,79 +7258,79 @@ declare namespace reaper {
    *
    * col_vuintcol : VU meter interlace/edge color
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 34,31,34
    *
    * vu_gr_bgcol : VU meter gain reduction background
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 34,31,34
    *
    * vu_gr_fgcol : VU meter gain reduction indicator
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * col_vumidi : VU meter midi activity
    *
-   * -- current RGB: 249,145,87
+   * -- current RGB: 252,152,103
    *
    * col_vuind1 : VU (indicator) - no signal
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 34,31,34
    *
    * col_vuind2 : VU (indicator) - low signal
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 34,31,34
    *
    * col_vuind3 : VU (indicator) - med signal
    *
-   * -- current RGB: 153,204,153
+   * -- current RGB: 169,220,118
    *
    * col_vuind4 : VU (indicator) - hot signal
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * mcp_sends_normal : Sends text: normal
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * mcp_sends_muted : Sends text: muted
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 114,112,114
    *
    * mcp_send_midihw : Sends text: MIDI hardware
    *
-   * -- current RGB: 102,153,204
+   * -- current RGB: 120,220,232
    *
    * mcp_sends_levels : Sends level
    *
-   * -- current RGB: 102,153,204
+   * -- current RGB: 120,220,232
    *
    * mcp_fx_normal : FX insert text: normal
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * mcp_fx_bypassed : FX insert text: bypassed
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 114,112,114
    *
    * mcp_fx_offlined : FX insert text: offline
    *
-   * -- current RGB: 210,123,83
+   * -- current RGB: 252,152,103
    *
    * mcp_fxparm_normal : FX parameter text: normal
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * mcp_fxparm_bypassed : FX parameter text: bypassed
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 114,112,114
    *
    * mcp_fxparm_offlined : FX parameter text: offline
    *
-   * -- current RGB: 210,123,83
+   * -- current RGB: 252,152,103
    *
    * tcp_list_scrollbar : List scrollbar (track panel)
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 114,112,114
    *
    * tcp_list_scrollbar_mode : List scrollbar (track panel) - draw mode
    *
@@ -7049,7 +7338,7 @@ declare namespace reaper {
    *
    * tcp_list_scrollbar_mouseover : List scrollbar mouseover (track panel)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 193,192,192
    *
    * tcp_list_scrollbar_mouseover_mode : List scrollbar mouseover (track panel) - draw mode
    *
@@ -7057,7 +7346,7 @@ declare namespace reaper {
    *
    * mcp_list_scrollbar : List scrollbar (mixer panel)
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 114,112,114
    *
    * mcp_list_scrollbar_mode : List scrollbar (mixer panel) - draw mode
    *
@@ -7065,7 +7354,7 @@ declare namespace reaper {
    *
    * mcp_list_scrollbar_mouseover : List scrollbar mouseover (mixer panel)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 193,192,192
    *
    * mcp_list_scrollbar_mouseover_mode : List scrollbar mouseover (mixer panel) - draw mode
    *
@@ -7073,15 +7362,15 @@ declare namespace reaper {
    *
    * midi_rulerbg : MIDI editor ruler background
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 34,31,34
    *
    * midi_rulerfg : MIDI editor ruler text
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 147,146,147
    *
    * midi_grid2 : MIDI editor grid line (start of measure)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 252,252,250
    *
    * midi_griddm2 : MIDI editor grid line (start of measure) - draw mode
    *
@@ -7089,7 +7378,7 @@ declare namespace reaper {
    *
    * midi_grid3 : MIDI editor grid line (start of beats)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 252,252,250
    *
    * midi_griddm3 : MIDI editor grid line (start of beats) - draw mode
    *
@@ -7097,7 +7386,7 @@ declare namespace reaper {
    *
    * midi_grid1 : MIDI editor grid line (between beats)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 252,252,250
    *
    * midi_griddm1 : MIDI editor grid line (between beats) - draw mode
    *
@@ -7105,31 +7394,31 @@ declare namespace reaper {
    *
    * midi_trackbg1 : MIDI editor background color (naturals)
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 45,42,46
    *
    * midi_trackbg2 : MIDI editor background color (sharps/flats)
    *
-   * -- current RGB: 41,41,41
+   * -- current RGB: 41,38,41
    *
    * midi_trackbg_outer1 : MIDI editor background color, out of bounds (naturals)
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * midi_trackbg_outer2 : MIDI editor background color, out of bounds (sharps/flats)
    *
-   * -- current RGB: 38,38,38
+   * -- current RGB: 34,31,34
    *
    * midi_selpitch1 : MIDI editor background color, selected pitch (naturals)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 62,58,64
    *
    * midi_selpitch2 : MIDI editor background color, selected pitch (sharps/flats)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 58,55,60
    *
    * midi_selbg : MIDI editor time selection color
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 252,252,250
    *
    * midi_selbg_drawmode : MIDI editor time selection fill mode
    *
@@ -7137,7 +7426,7 @@ declare namespace reaper {
    *
    * midi_gridhc : MIDI editor CC horizontal center line
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 114,112,114
    *
    * midi_gridhcdm : MIDI editor CC horizontal center line - draw mode
    *
@@ -7145,7 +7434,7 @@ declare namespace reaper {
    *
    * midi_gridh : MIDI editor CC horizontal line
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 91,89,92
    *
    * midi_gridhdm : MIDI editor CC horizontal line - draw mode
    *
@@ -7153,51 +7442,51 @@ declare namespace reaper {
    *
    * midi_ccbut : MIDI editor CC lane add/remove buttons
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 147,146,147
    *
    * midi_ccbut_text : MIDI editor CC lane button text
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 252,252,250
    *
    * midi_ccbut_arrow : MIDI editor CC lane button arrow
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 193,192,192
    *
    * midioct : MIDI editor octave line color
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 34,31,34
    *
    * midi_inline_trackbg1 : MIDI inline background color (naturals)
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 45,42,46
    *
    * midi_inline_trackbg2 : MIDI inline background color (sharps/flats)
    *
-   * -- current RGB: 41,41,41
+   * -- current RGB: 41,38,41
    *
    * midioct_inline : MIDI inline octave line color
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 34,31,34
    *
    * midi_endpt : MIDI editor end marker
    *
-   * -- current RGB: 102,153,204
+   * -- current RGB: 120,220,232
    *
    * midi_notebg : MIDI editor note, unselected (midi_note_colormap overrides)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 221,220,220
    *
    * midi_notefg : MIDI editor note, selected (midi_note_colormap overrides)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 54,52,56
    *
    * midi_notemute : MIDI editor note, muted, unselected (midi_note_colormap overrides)
    *
-   * -- current RGB: 105,104,100
+   * -- current RGB: 110,110,110
    *
    * midi_notemute_sel : MIDI editor note, muted, selected (midi_note_colormap overrides)
    *
-   * -- current RGB: 28,28,28
+   * -- current RGB: 27,26,28
    *
    * midi_itemctl : MIDI editor note controls
    *
@@ -7205,43 +7494,43 @@ declare namespace reaper {
    *
    * midi_ofsn : MIDI editor note (offscreen)
    *
-   * -- current RGB: 242,240,236
+   * -- current RGB: 147,146,147
    *
    * midi_ofsnsel : MIDI editor note (offscreen, selected)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * midi_editcurs : MIDI editor cursor
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 255,216,102
    *
    * midi_pkey1 : MIDI piano key color (naturals background, sharps/flats text)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 193,192,192
    *
    * midi_pkey2 : MIDI piano key color (sharps/flats background, naturals text)
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 25,24,26
    *
    * midi_pkey3 : MIDI piano key color (selected)
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 128,128,128
    *
    * midi_noteon_flash : MIDI piano key note-on flash
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 91,89,92
    *
    * midi_leftbg : MIDI piano pane background
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 34,31,34
    *
    * midifont_col_light_unsel : MIDI editor note text and control color, unselected (light)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * midifont_col_dark_unsel : MIDI editor note text and control color, unselected (dark)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 25,24,26
    *
    * midifont_mode_unsel : MIDI editor note text and control mode, unselected
    *
@@ -7249,11 +7538,11 @@ declare namespace reaper {
    *
    * midifont_col_light : MIDI editor note text and control color (light)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * midifont_col_dark : MIDI editor note text and control color (dark)
    *
-   * -- current RGB: 57,57,57
+   * -- current RGB: 25,24,26
    *
    * midifont_mode : MIDI editor note text and control mode
    *
@@ -7281,55 +7570,55 @@ declare namespace reaper {
    *
    * midieditorlist_bg : MIDI list editor background
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 45,42,46
    *
    * midieditorlist_fg : MIDI list editor text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * midieditorlist_grid : MIDI list editor grid lines
    *
-   * -- current RGB: 81,81,81
+   * -- current RGB: 25,24,26
    *
    * midieditorlist_selbg : MIDI list editor selected row
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 64,62,65
    *
    * midieditorlist_selfg : MIDI list editor selected text
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 252,252,250
    *
    * midieditorlist_seliabg : MIDI list editor selected row (inactive)
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 64,62,65
    *
    * midieditorlist_seliafg : MIDI list editor selected text (inactive)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 193,192,192
    *
    * midieditorlist_bg2 : MIDI list editor background (secondary)
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 34,31,34
    *
    * midieditorlist_fg2 : MIDI list editor text (secondary)
    *
-   * -- current RGB: 160,159,147
+   * -- current RGB: 193,192,192
    *
    * midieditorlist_selbg2 : MIDI list editor selected row (secondary)
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 64,62,65
    *
    * midieditorlist_selfg2 : MIDI list editor selected text (secondary)
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 193,192,192
    *
    * col_explorer_sel : Media explorer selection
    *
-   * -- current RGB: 45,45,45
+   * -- current RGB: 25,24,26
    *
    * col_explorer_seldm : Media explorer selection mode
    *
-   * -- blendmode 00024f00
+   * -- blendmode 00024d00
    *
    * col_explorer_seledge : Media explorer selection edge
    *
@@ -7337,11 +7626,11 @@ declare namespace reaper {
    *
    * explorer_grid : Media explorer grid, markers
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 114,112,114
    *
    * explorer_pitchtext : Media explorer pitch detection text
    *
-   * -- current RGB: 102,153,204
+   * -- current RGB: 120,220,232
    *
    * docker_shadow : Tab control shadow
    *
@@ -7349,123 +7638,123 @@ declare namespace reaper {
    *
    * docker_selface : Tab control selected tab
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * docker_unselface : Tab control unselected tab
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * docker_text : Tab control text
    *
-   * -- current RGB: 116,115,105
+   * -- current RGB: 193,192,192
    *
    * docker_text_sel : Tab control text selected tab
    *
-   * -- current RGB: 232,230,223
+   * -- current RGB: 255,216,102
    *
    * docker_bg : Tab control background
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * windowtab_bg : Tab control background in windows
    *
-   * -- current RGB: 30,30,30
+   * -- current RGB: 25,24,26
    *
    * auto_item_unsel : Envelope: Unselected automation item
    *
-   * -- current RGB: 211,208,200
+   * -- current RGB: 193,192,192
    *
    * col_env1 : Envelope: Volume (pre-FX)
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * col_env2 : Envelope: Volume
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * env_trim_vol : Envelope: Trim Volume
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * col_env3 : Envelope: Pan (pre-FX)
    *
-   * -- current RGB: 102,204,204
+   * -- current RGB: 120,220,232
    *
    * col_env4 : Envelope: Pan
    *
-   * -- current RGB: 102,204,204
+   * -- current RGB: 120,220,232
    *
    * env_track_mute : Envelope: Mute
    *
-   * -- current RGB: 242,119,122
+   * -- current RGB: 255,97,136
    *
    * col_env5 : Envelope: Master playrate
    *
-   * -- current RGB: 102,204,204
+   * -- current RGB: 120,220,232
    *
    * col_env6 : Envelope: Master tempo
    *
-   * -- current RGB: 210,123,83
+   * -- current RGB: 252,152,103
    *
    * col_env7 : Envelope: Width / Send volume
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * col_env8 : Envelope: Send pan
    *
-   * -- current RGB: 102,204,204
+   * -- current RGB: 120,220,232
    *
    * col_env9 : Envelope: Send volume 2
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * col_env10 : Envelope: Send pan 2
    *
-   * -- current RGB: 102,204,204
+   * -- current RGB: 120,220,232
    *
    * env_sends_mute : Envelope: Send mute
    *
-   * -- current RGB: 242,119,122
+   * -- current RGB: 255,97,136
    *
    * col_env11 : Envelope: Audio hardware output volume
    *
-   * -- current RGB: 255,204,102
+   * -- current RGB: 255,216,102
    *
    * col_env12 : Envelope: Audio hardware output pan
    *
-   * -- current RGB: 102,204,204
+   * -- current RGB: 120,220,232
    *
    * col_env13 : Envelope: FX parameter 1
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 171,157,242
    *
    * col_env14 : Envelope: FX parameter 2
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 171,157,242
    *
    * col_env15 : Envelope: FX parameter 3
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 171,157,242
    *
    * col_env16 : Envelope: FX parameter 4
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 171,157,242
    *
    * env_item_vol : Envelope: Item take volume
    *
-   * -- current RGB: 249,145,87
+   * -- current RGB: 252,152,103
    *
    * env_item_pan : Envelope: Item take pan
    *
-   * -- current RGB: 102,153,204
+   * -- current RGB: 120,220,232
    *
    * env_item_mute : Envelope: Item take mute
    *
-   * -- current RGB: 242,119,122
+   * -- current RGB: 255,97,136
    *
    * env_item_pitch : Envelope: Item take pitch
    *
-   * -- current RGB: 204,153,204
+   * -- current RGB: 171,157,242
    *
    * wiring_grid2 : Wiring: Background
    *
@@ -7569,7 +7858,7 @@ declare namespace reaper {
    *
    * autogroup : Automatic track group
    *
-   * -- current RGB: 242,119,122
+   * -- current RGB: 255,97,136
    *
    * group_0 : Group #1
    *
@@ -7860,7 +8149,7 @@ declare namespace reaper {
    * ```
    * boolean _ = reaper.SetTrackMIDILyrics(MediaTrack track, integer flag, string str)
    * ```
-   * Set all MIDI lyrics on the track. Lyrics will be stuffed into any MIDI items found in range. Flag is unused at present. str is passed in as beat position, tab, text, tab (example with flag=2: "1.1.2\tLyric for measure 1 beat 2\t2.1.1\tLyric for measure 2 beat 1	"). See GetTrackMIDILyrics
+   * Set all MIDI lyrics on the track. Lyrics will be stuffed into any MIDI items found in range. Flag is unused at present. str is passed in as beat position, tab, text, tab (example with flag=2: "1.1.2\tLyric for measure 1 beat 2\t2.1.1\tLyric for measure 2 beat 1  "). See GetTrackMIDILyrics
    */
   function SetTrackMIDILyrics(
     track: MediaTrack,
@@ -8818,7 +9107,7 @@ declare namespace reaper {
    * ```
    * integer retval, string pattern = reaper.TimeMap_GetMetronomePattern(ReaProject proj, number time, string pattern)
    * ```
-   * Fills in a string representing the active metronome pattern. For example, in a 7/8 measure divided 3+4, the pattern might be "1221222". The length of the string is the time signature numerator, and the function returns the time signature denominator.
+   * Fills in a string representing the active metronome pattern. For example, in a 7/8 measure divided 3+4, the pattern might be "ABCABCD". For backwards compatibility, by default the function will return 1 for each primary beat and 2 for each non-primary beat, so "1221222" in this example, and does not support triplets. If buf is set to "EXTENDED", the function will return the full string as displayed in the pattern editor, including all beat types and triplet representations. Pass in "SET:string" with a correctly formed pattern string matching the current time signature numerator to set the click pattern. The time signature numerator can be deduced from the returned string, and the function returns the time signature denominator.
    */
   function TimeMap_GetMetronomePattern(
     proj: ReaProject,
@@ -9155,64 +9444,124 @@ declare namespace reaper {
   ): LuaMultiReturn<[number, number, number]>;
 
   /**
+   * ```
+   * boolean retval, string buf = reaper.TrackFX_GetNamedConfigParm(MediaTrack track, integer fx, string parmname)
+   * ```
    * gets plug-in specific named configuration value (returns true on success).
+   *
+   *
    *
    * Supported values for read:
    *
-   * - `pdc` : PDC latency
-   * - `in_pin_X` : name of input pin X
-   * - `out_pin_X` : name of output pin X
-   * - `fx_type` : type string
-   * - `fx_ident` : type-specific identifier
-   * - `fx_name` : name of FX (also supported as original_name)
-   * - `GainReduction_dB` : [ReaComp + other supported compressors]
-   * - `parent_container` : FX ID of parent container, if any (v7.06+)
-   * - `container_count` : [Container] number of FX in container
-   * - `container_item.X` : FX ID of item in container (first item is container_item.0) (v7.06+)
-   * - `param.X.container_map.hint_id` : unique ID of mapping (preserved if mapping order changes)
-   * - `param.X.container_map.delete` : read this value in order to remove the mapping for this parameter
-   * - `container_map.add` : read from this value to add a new container parameter mapping -- will return new parameter index (accessed via param.X.container_map.*)
-   * - `container_map.add.FXID.PARMIDX` : read from this value to add/get container parameter mapping for FXID/PARMIDX -- will return the parameter index (accessed via param.X.container_map.*). FXID can be a full address (must be a child of the container) or a 0-based sub-index (v7.06+).
-   * - `container_map.get.FXID.PARMIDX` : read from this value to get container parameter mapping for FXID/PARMIDX -- will return the parameter index (accessed via param.X.container_map.*). FXID can be a full address (must be a child of the container) or a 0-based sub-index (v7.06+).
-   * - `chain_pdc_actual` : returns the actual chain latency in samples, only valid after playback has commenced, may be rounded up to block size.
-   * - `chain_pdc_reporting` : returns the reported chain latency, always valid, not rounded to block size.
+   * pdc : PDC latency
+   *
+   * in_pin_X : name of input pin X
+   *
+   * out_pin_X : name of output pin X
+   *
+   * fx_type : type string
+   *
+   * fx_ident : type-specific identifier
+   *
+   * fx_name : name of FX (also supported as original_name)
+   *
+   * GainReduction_dB : [ReaComp + other supported compressors]
+   *
+   * is_instrument : 1 if instrument, 0 if not (v7.40+)
+   *
+   * parent_container : FX ID of parent container, if any (v7.06+)
+   *
+   * container_count : [Container] number of FX in container
+   *
+   * container_item.X : FX ID of item in container (first item is container_item.0) (v7.06+)
+   *
+   * param.X.container_map.hint_id : unique ID of mapping (preserved if mapping order changes)
+   *
+   * param.X.container_map.delete : read this value in order to remove the mapping for this parameter
+   *
+   * container_map.add : read from this value to add a new container parameter mapping -- will return new parameter index (accessed via param.X.container_map.*)
+   *
+   * container_map.add.FXID.PARMIDX : read from this value to add/get container parameter mapping for FXID/PARMIDX -- will return the parameter index (accessed via param.X.container_map.*). FXID can be a full address (must be a child of the container) or a 0-based sub-index (v7.06+).
+   *
+   * container_map.get.FXID.PARMIDX : read from this value to get container parameter mapping for FXID/PARMIDX -- will return the parameter index (accessed via param.X.container_map.*). FXID can be a full address (must be a child of the container) or a 0-based sub-index (v7.06+).
+   *
+   * chain_pdc_actual : returns the actual chain latency in samples, only valid after playback has commenced, may be rounded up to block size.
+   *
+   * chain_pdc_reporting : returns the reported chain latency, always valid, not rounded to block size.
+   *
+   *
+   *
+   *
    *
    * Supported values for read/write:
    *
-   * - `vst_chunk[_program]` : base64-encoded VST-specific chunk.
-   * - `clap_chunk` : base64-encoded CLAP-specific chunk.
-   * - `param.X.lfo.[active,dir,phase,speed,strength,temposync,free,shape]` : parameter moduation LFO state
-   * - `param.X.acs.[active,dir,strength,attack,release,dblo,dbhi,chan,stereo,x2,y2]` : parameter modulation ACS state
-   * - `param.X.plink.[active,scale,offset,effect,param,midi_bus,midi_chan,midi_msg,midi_msg2]` : parameter link/MIDI link: set effect=-100 to support midi_*
-   * - `param.X.mod.[active,baseline,visible]` : parameter module global settings
-   * - `param.X.learn.[midi1,midi2,osc]` : first two bytes of MIDI message, or OSC string if set
-   * - `param.X.learn.mode` : absolution/relative mode flag (0: Absolute, 1: 127=-1,1=+1, 2: 63=-1, 65=+1, 3: 65=-1, 1=+1, 4: toggle if nonzero)
-   * - `param.X.learn.flags` : &1=selected track only, &2=soft takeover, &4=focused FX only, &8=LFO retrigger, &16=visible FX only
-   * - `param.X.container_map.fx_index` : index of FX contained in container
-   * - `param.X.container_map.fx_parm` : parameter index of parameter of FX contained in container
-   * - `param.X.container_map.aliased_name` : name of parameter (if user-renamed, otherwise fails)
-   * - `BANDTYPEx, BANDENABLEDx` : band configuration [ReaEQ]
-   * - `THRESHOLD, CEILING, TRUEPEAK` : [ReaLimit]
-   * - `NUMCHANNELS, NUMSPEAKERS, RESETCHANNELS` : [ReaSurroundPan]
-   * - `ITEMx` : [ReaVerb] state configuration line, when writing should be followed by a write of DONE
-   * - `FILE, FILEx, -FILEx, +FILEx, -FILE*` : [RS5k] file list, -/+ prefixes are write-only, when writing any, should be followed by a write of DONE
-   * - `MODE, RSMODE` : [RS5k] general mode, resample mode
-   * - `VIDEO_CODE` : [video processor] code
-   * - `force_auto_bypass` : 0 or 1 - force auto-bypass plug-in on silence
-   * - `parallel` : 0, 1 or 2 - 1=process plug-in in parallel with previous, 2=process plug-in parallel and merge MIDI
-   * - `instance_oversample_shift` : instance oversampling shift amount, 0=none, 1=~96k, 2=~192k, etc. When setting requires playback stop/start to take effect
-   * - `chain_oversample_shift` : chain oversampling shift amount, 0=none, 1=~96k, 2=~192k, etc. When setting requires playback stop/start to take effect
-   * - `chain_pdc_mode` : chain PDC mode (0=classic, 1=new-default, 2=ignore PDC, 3=hwcomp-master)
-   * - `chain_sel` : selected/visible FX in chain
-   * - `renamed_name` : renamed FX instance name (empty string = not renamed)
-   * - `container_nch` : number of internal channels for container
-   * - `container_nch_in` : number of input pins for container
-   * - `container_nch_out` : number of output pints for container
-   * - `container_nch_feedback` : number of internal feedback channels enabled in container
-   * - `focused` : reading returns 1 if focused. Writing a positive value to this sets the FX UI as "last focused."
-   * - `last_touched` : reading returns two integers, one indicates whether FX is the last-touched FX, the second indicates which parameter was last touched. Writing a negative value ensures this plug-in is not set as last touched, otherwise the FX is set "last touched," and last touched parameter index is set to the value in the string (if valid).
+   * vst_chunk[_program] : base64-encoded VST-specific chunk.
    *
-   * FX indices for tracks can have 0x1000000 added to them in order to reference record input FX (normal tracks) or hardware output FX (master track). FX indices can have 0x2000000 added to them, in which case they will be used to address FX in containers. To address a container, the 1-based subitem is multiplied by one plus the count of the FX chain and added to the 1-based container item index. e.g. to address the third item in the container at the second position of the track FX chain for tr, the index would be 0x2000000 + 3*(TrackFX_GetCount(tr)+1) + 2. This can be extended to sub-containers using TrackFX_GetNamedConfigParm with container_count and similar logic. In REAPER v7.06+, you can use the much more convenient method to navigate hierarchies, see TrackFX_GetNamedConfigParm with parent_container and container_item.X.
+   * clap_chunk : base64-encoded CLAP-specific chunk.
+   *
+   * param.X.lfo.[active,dir,phase,speed,strength,temposync,free,shape] : parameter moduation LFO state
+   *
+   * param.X.acs.[active,dir,strength,attack,release,dblo,dbhi,chan,stereo,x2,y2] : parameter modulation ACS state
+   *
+   * param.X.plink.[active,scale,offset,effect,param,midi_bus,midi_chan,midi_msg,midi_msg2] : parameter link/MIDI link: set effect=-100 to support midi_*
+   *
+   * param.X.mod.[active,baseline,visible] : parameter module global settings
+   *
+   * param.X.learn.[midi1,midi2,osc] : first two bytes of MIDI message, or OSC string if set
+   *
+   * param.X.learn.mode : absolution/relative mode flag (0: Absolute, 1: 127=-1,1=+1, 2: 63=-1, 65=+1, 3: 65=-1, 1=+1, 4: toggle if nonzero)
+   *
+   * param.X.learn.flags : &1=selected track only, &2=soft takeover, &4=focused FX only, &8=LFO retrigger, &16=visible FX only
+   *
+   * param.X.container_map.fx_index : index of FX contained in container
+   *
+   * param.X.container_map.fx_parm : parameter index of parameter of FX contained in container
+   *
+   * param.X.container_map.aliased_name : name of parameter (if user-renamed, otherwise fails)
+   *
+   * BANDTYPEx, BANDENABLEDx : band configuration [ReaEQ]
+   *
+   * THRESHOLD, CEILING, TRUEPEAK : [ReaLimit]
+   *
+   * NUMCHANNELS, NUMSPEAKERS, RESETCHANNELS : [ReaSurroundPan]
+   *
+   * ITEMx : [ReaVerb] state configuration line, when writing should be followed by a write of DONE
+   *
+   * FILE, FILEx, -FILEx, +FILEx, -FILE* : [RS5k] file list, -/+ prefixes are write-only, when writing any, should be followed by a write of DONE
+   *
+   * MODE, RSMODE : [RS5k] general mode, resample mode
+   *
+   * VIDEO_CODE : [video processor] code
+   *
+   * force_auto_bypass : 0 or 1 - force auto-bypass plug-in on silence
+   *
+   * parallel : 0, 1 or 2 - 1=process plug-in in parallel with previous, 2=process plug-in parallel and merge MIDI
+   *
+   * instance_oversample_shift : instance oversampling shift amount, 0=none, 1=~96k, 2=~192k, etc. When setting requires playback stop/start to take effect
+   *
+   * chain_oversample_shift : chain oversampling shift amount, 0=none, 1=~96k, 2=~192k, etc. When setting requires playback stop/start to take effect
+   *
+   * chain_pdc_mode : chain PDC mode (0=classic, 1=new-default, 2=ignore PDC, 3=hwcomp-master)
+   *
+   * chain_sel : selected/visible FX in chain
+   *
+   * renamed_name : renamed FX instance name (empty string = not renamed)
+   *
+   * container_nch : number of internal channels for container
+   *
+   * container_nch_in : number of input pins for container
+   *
+   * container_nch_out : number of output pints for container
+   *
+   * container_nch_feedback : number of internal feedback channels enabled in container
+   *
+   * channel_config : reading returns 3 values: requested channel count (0 = VST3 auto), channel mode (0=multichannel, 1=multi-mono, 2=multi-stereo), and supported flags (&1=multichannel is supported, &2=automatic channel count is supported, &4=multi-mono is supported, &8=multi-stereo is supported). writing accepts 1 or more values, channel count, and channel mode if specified. VST3 bus sizes are only advisory, plug-ins may not use the value. Not supported for containers, containers should use container_nch etc.
+   *
+   * focused : reading returns 1 if focused. Writing a positive value to this sets the FX UI as "last focused."
+   *
+   * last_touched : reading returns two integers, one indicates whether FX is the last-touched FX, the second indicates which parameter was last touched. Writing a negative value ensures this plug-in is not set as last touched, otherwise the FX is set "last touched," and last touched parameter index is set to the value in the string (if valid).
+   *
+   *  FX indices for tracks can have 0x1000000 added to them in order to reference record input FX (normal tracks) or hardware output FX (master track). FX indices can have 0x2000000 added to them, in which case they will be used to address FX in containers. To address a container, the 1-based subitem is multiplied by one plus the count of the FX chain and added to the 1-based container item index. e.g. to address the third item in the container at the second position of the track FX chain for tr, the index would be 0x2000000 + 3*(TrackFX_GetCount(tr)+1) + 2. This can be extended to sub-containers using TrackFX_GetNamedConfigParm with container_count and similar logic. In REAPER v7.06+, you can use the much more convenient method to navigate hierarchies, see TrackFX_GetNamedConfigParm with parent_container and container_item.X.
    */
   function TrackFX_GetNamedConfigParm(
     track: MediaTrack,
@@ -9528,6 +9877,8 @@ declare namespace reaper {
    * container_nch_out : number of output pints for container
    *
    * container_nch_feedback : number of internal feedback channels enabled in container
+   *
+   * channel_config : reading returns 3 values: requested channel count (0 = VST3 auto), channel mode (0=multichannel, 1=multi-mono, 2=multi-stereo), and supported flags (&1=multichannel is supported, &2=automatic channel count is supported, &4=multi-mono is supported, &8=multi-stereo is supported). writing accepts 1 or more values, channel count, and channel mode if specified. VST3 bus sizes are only advisory, plug-ins may not use the value. Not supported for containers, containers should use container_nch etc.
    *
    * focused : reading returns 1 if focused. Writing a positive value to this sets the FX UI as "last focused."
    *
@@ -10247,10 +10598,20 @@ declare namespace reaper {
    * ```
    * TrackEnvelope retval, boolean takeEnvelope = reaper.BR_GetMouseCursorContext_Envelope()
    * ```
-   * [BR] Returns envelope that was captured with the last call to BR_GetMouseCursorContext. In case the envelope belongs to take, takeEnvelope will be true.
+   * [BR] Returns envelope that was captured with the last call to BR_GetMouseCursorContext. In case the envelope belongs to take, takeEnvelope will be true. See BR_GetMouseCursorContext_EnvelopeEx.
    */
   function BR_GetMouseCursorContext_Envelope(): LuaMultiReturn<
     [TrackEnvelope, boolean]
+  >;
+
+  /**
+   * ```
+   * TrackEnvelope retval, boolean takeEnvelope, integer autoItemIdx, integer pointIdx = reaper.BR_GetMouseCursorContext_EnvelopeEx()
+   * ```
+   * [BR] Returns envelope that was captured with the last call to BR_GetMouseCursorContext. In case the envelope belongs to take, takeEnvelope will be true. Automation item and point index are -1 if the mouse cursor is not over one.
+   */
+  function BR_GetMouseCursorContext_EnvelopeEx(): LuaMultiReturn<
+    [TrackEnvelope, boolean, number, number]
   >;
 
   /**
@@ -10937,15 +11298,15 @@ declare namespace reaper {
 
   /**
    * ```
-   * integer _ = reaper.BR_Win32_SendMessage(identifier hwnd, integer msg, integer lParam, integer wParam)
+   * integer _ = reaper.BR_Win32_SendMessage(identifier hwnd, integer msg, integer wParam, integer lParam)
    * ```
    * [BR] Equivalent to win32 API SendMessage().
    */
   function BR_Win32_SendMessage(
     hwnd: identifier,
     msg: number,
-    lParam: number,
     wParam: number,
+    lParam: number,
   ): number;
 
   /**
@@ -11405,9 +11766,9 @@ declare namespace reaper {
    *
    *
    *
-   * 	Keys are Windows virtual key codes. &0x8000 for an extended key (eg. Numpad Enter = VK_RETURN & 0x8000).
+   *  Keys are Windows virtual key codes. &0x8000 for an extended key (eg. Numpad Enter = VK_RETURN & 0x8000).
    *
-   * 	Modifier values: nil = read from keyboard, 0 = no modifier, &4 = Control (Cmd on macOS), &8 = Shift, &16 = Alt, &32 = Super
+   *  Modifier values: nil = read from keyboard, 0 = no modifier, &4 = Control (Cmd on macOS), &8 = Shift, &16 = Alt, &32 = Super
    */
   function CF_SendActionShortcut(
     hwnd: identifier,
@@ -11439,6 +11800,14 @@ declare namespace reaper {
    * Set the online/offline status of the given source (closes files when set=false).
    */
   function CF_SetMediaSourceOnline(src: PCM_source, set: boolean): void;
+
+  /**
+   * ```
+   * reaper.CF_SetTcpScroll(MediaTrack track, integer extraPixels)
+   * ```
+   * Scroll the TCP to the specified track (if non-null) + extraPixels.
+   */
+  function CF_SetTcpScroll(track: MediaTrack, extraPixels: number): void;
 
   /**
    * ```
@@ -11492,7 +11861,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.FNG_GetMidiNoteIntProperty(RprMidiNote midiNote, string property)
    * ```
-   * [FNG] Get MIDI note property
+   * [FNG] Get MIDI note property. Supported properties: CHANNEL, LENGTH, MUTED, PITCH, POSITION, SELECTED and VELOCITY.
    */
   function FNG_GetMidiNoteIntProperty(
     midiNote: RprMidiNote,
@@ -11503,7 +11872,7 @@ declare namespace reaper {
    * ```
    * reaper.FNG_SetMidiNoteIntProperty(RprMidiNote midiNote, string property, integer value)
    * ```
-   * [FNG] Set MIDI note property
+   * [FNG] Set MIDI note property. See FNG_GetMidiNoteIntProperty for the list of supported properties.
    */
   function FNG_SetMidiNoteIntProperty(
     midiNote: RprMidiNote,
@@ -11599,16 +11968,6 @@ declare namespace reaper {
    *
    *
    * List clipper objects may only be attached to the context they were created for.
-   *
-   *
-   *
-   * Fonts are (currently) a special case: they must be attached to the context
-   *
-   * before usage. Furthermore, fonts may only be attached or detached immediately
-   *
-   * after the context is created or before any other function calls modifying the
-   *
-   * context per defer cycle. See "limitations" in the font API documentation.
    */
   function ImGui_Attach(ctx: ImGui_Context, obj: ImGui_Resource): void;
 
@@ -11713,11 +12072,13 @@ declare namespace reaper {
    *
    *
    *
-   * BeginDisabled(false) essentially does nothing useful but is provided to
+   * BeginDisabled(false)/EndDisabled essentially does nothing but is provided to
    *
-   * facilitate use of boolean expressions.
+   * facilitate use of boolean expressions (as a micro-optimization: if you have tens
    *
-   * If you can avoid calling BeginDisabled(false)/EndDisabled() best to avoid it.
+   * of thousands of BeginDisabled(false)/EndDisabled() pairs, you might want to
+   *
+   * refactor your code to avoid making those calls)
    */
   function ImGui_BeginDisabled(ctx: ImGui_Context, disabledIn?: boolean): void;
 
@@ -11990,6 +12351,14 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_ButtonFlags_EnableNav()
+   * ```
+   * Do not disable navigation/tabbing. Otherwise disabled by default.
+   */
+  function ImGui_ButtonFlags_EnableNav(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_ButtonFlags_MouseButtonLeft()
    * ```
    * React on left mouse button (default).
@@ -12104,11 +12473,11 @@ declare namespace reaper {
 
   /**
    * ```
-   * integer _ = reaper.ImGui_ChildFlags_Border()
+   * integer _ = reaper.ImGui_ChildFlags_Borders()
    * ```
    * Show an outer border and enable WindowPadding.
    */
-  function ImGui_ChildFlags_Border(): number;
+  function ImGui_ChildFlags_Borders(): number;
 
   /**
    * ```
@@ -12128,7 +12497,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_ChildFlags_NavFlattened()
    * ```
-   * Share focus scope, allow gamepad/keyboard navigation to cross over parent
+   * Share focus scope, allow keyboard/gamepad navigation to cross over parent
    *
    *    border to this child or between sibling child windows.
    */
@@ -12296,6 +12665,14 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_Col_InputTextCursor()
+   * ```
+   * InputText cursor/caret
+   */
+  function ImGui_Col_InputTextCursor(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_Col_MenuBarBg()
    * ```
    */
@@ -12311,11 +12688,11 @@ declare namespace reaper {
 
   /**
    * ```
-   * integer _ = reaper.ImGui_Col_NavHighlight()
+   * integer _ = reaper.ImGui_Col_NavCursor()
    * ```
-   * Gamepad/keyboard: current highlighted item.
+   * Color of keyboard/gamepad navigation cursor/rectangle, when visible
    */
-  function ImGui_Col_NavHighlight(): number;
+  function ImGui_Col_NavCursor(): number;
 
   /**
    * ```
@@ -12566,8 +12943,17 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_Col_TextLink()
+   * ```
+   * Hyperlink color
+   */
+  function ImGui_Col_TextLink(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_Col_TextSelectedBg()
    * ```
+   * Selected text inside an InputText
    */
   function ImGui_Col_TextSelectedBg(): number;
 
@@ -12594,6 +12980,14 @@ declare namespace reaper {
    * Title bar when collapsed
    */
   function ImGui_Col_TitleBgCollapsed(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_Col_TreeLines()
+   * ```
+   * Tree node hierarchy outlines when using TreeNodeFlags_DrawLines
+   */
+  function ImGui_Col_TreeLines(): number;
 
   /**
    * ```
@@ -12746,21 +13140,29 @@ declare namespace reaper {
 
   /**
    * ```
-   * integer _ = reaper.ImGui_ColorEditFlags_AlphaPreview()
+   * integer _ = reaper.ImGui_ColorEditFlags_AlphaNoBg()
    * ```
-   * ColorEdit, ColorPicker, ColorButton: display preview as a transparent color
-   *
-   *    over a checkerboard, instead of opaque.
+   * Disable rendering a checkerboard background behind transparent color.
    */
-  function ImGui_ColorEditFlags_AlphaPreview(): number;
+  function ImGui_ColorEditFlags_AlphaNoBg(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ColorEditFlags_AlphaOpaque()
+   * ```
+   * Disable alpha in the preview.
+   *
+   *    Contrary to _NoAlpha it may still be edited when calling ColorEdit4/ColorPicker4.
+   *
+   *    For ColorButton this does the same as _NoAlpha.
+   */
+  function ImGui_ColorEditFlags_AlphaOpaque(): number;
 
   /**
    * ```
    * integer _ = reaper.ImGui_ColorEditFlags_AlphaPreviewHalf()
    * ```
-   * ColorEdit, ColorPicker, ColorButton: display half opaque / half checkerboard,
-   *
-   *    instead of opaque.
+   * Display half opaque / half transparent preview.
    */
   function ImGui_ColorEditFlags_AlphaPreviewHalf(): number;
 
@@ -13112,24 +13514,6 @@ declare namespace reaper {
 
   /**
    * ```
-   * integer _ = reaper.ImGui_ConfigFlags_NavEnableSetMousePos()
-   * ```
-   * Instruct navigation to move the mouse cursor.
-   */
-  function ImGui_ConfigFlags_NavEnableSetMousePos(): number;
-
-  /**
-   * ```
-   * integer _ = reaper.ImGui_ConfigFlags_NavNoCaptureKeyboard()
-   * ```
-   * Instruct navigation to not capture global keyboard input when
-   *
-   *    ConfigFlags_NavEnableKeyboard is set (see SetNextFrameWantCaptureKeyboard).
-   */
-  function ImGui_ConfigFlags_NavNoCaptureKeyboard(): number;
-
-  /**
-   * ```
    * integer _ = reaper.ImGui_ConfigFlags_NoKeyboard()
    * ```
    * Instruct dear imgui to disable keyboard inputs and interactions.
@@ -13194,6 +13578,20 @@ declare namespace reaper {
    * **Needs to be set at context startup time** if you don't want to miss windows.
    */
   function ImGui_ConfigVar_DebugBeginReturnValueOnce(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ConfigVar_DebugHighlightIdConflicts()
+   * ```
+   * Highlight and show an error message popup when multiple items have conflicting
+   *
+   *    identifiers.
+   *
+   *    - Code should use PushID/PopID in loops, or append "##xx" to same-label identifiers.
+   *
+   *    - Empty label e.g. Button("") == same ID as parent widget/node. Use Button("##xx") instead!
+   */
+  function ImGui_ConfigVar_DebugHighlightIdConflicts(): number;
 
   /**
    * ```
@@ -13389,6 +13787,74 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_ConfigVar_NavCaptureKeyboard()
+   * ```
+   * Instruct navigation to not capture global keyboard input
+   *
+   *    (see SetNextFrameWantCaptureKeyboard).
+   */
+  function ImGui_ConfigVar_NavCaptureKeyboard(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ConfigVar_NavCursorVisibleAlways()
+   * ```
+   * Navigation cursor is always visible.
+   */
+  function ImGui_ConfigVar_NavCursorVisibleAlways(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ConfigVar_NavCursorVisibleAuto()
+   * ```
+   * Using directional navigation key makes the cursor visible.
+   *
+   *    Mouse click hides the cursor.
+   */
+  function ImGui_ConfigVar_NavCursorVisibleAuto(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ConfigVar_NavEscapeClearFocusItem()
+   * ```
+   * Pressing Escape can clear focused item + navigation id/highlight.
+   *
+   *    Set to false if you want to always keep highlight on.
+   */
+  function ImGui_ConfigVar_NavEscapeClearFocusItem(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ConfigVar_NavEscapeClearFocusWindow()
+   * ```
+   * Pressing Escape can clear focused window as well
+   *
+   *    (superset of ConfigVar_NavEscapeClearFocusItem).
+   */
+  function ImGui_ConfigVar_NavEscapeClearFocusWindow(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ConfigVar_NavMoveSetMousePos()
+   * ```
+   * Directional/tabbing navigation teleports the mouse cursor.
+   */
+  function ImGui_ConfigVar_NavMoveSetMousePos(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ConfigVar_ScrollbarScrollByPage()
+   * ```
+   * Enable scrolling page by page when clicking outside the scrollbar grab.
+   *
+   *    When disabled, always scroll to clicked location.
+   *
+   *    When enabled, Shift+Click scrolls to clicked location.
+   */
+  function ImGui_ConfigVar_ScrollbarScrollByPage(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_ConfigVar_ViewportsNoDecoration()
    * ```
    * Disable default OS window decoration. Enabling decoration can create
@@ -13445,11 +13911,9 @@ declare namespace reaper {
 
   /**
    * ```
-   * ImGui_Font _ = reaper.ImGui_CreateFont(string family_or_file, integer size, optional integer flagsIn)
+   * ImGui_Font _ = reaper.ImGui_CreateFont(string family, optional integer flagsIn)
    * ```
-   * Load a font matching a font family name or from a font file.
-   *
-   * The font will remain valid while it's attached to a context. See Attach.
+   * Load a font matching a font family name.
    *
    *
    *
@@ -13459,21 +13923,45 @@ declare namespace reaper {
    *
    *
    *
-   * If 'family_or_file' specifies a path to a font file (contains a / or \\):
-   *
-   * - The first byte of 'flags' is used as the font index within the file
-   *
-   * - The font styles in 'flags' are simulated by the font renderer
+   * See CreateFontFromFile.
    */
-  function ImGui_CreateFont(
-    family_or_file: string,
-    size: number,
+  function ImGui_CreateFont(family: string, flagsIn?: number): ImGui_Font;
+
+  /**
+   * ```
+   * ImGui_Font _ = reaper.ImGui_CreateFontFromFile(string file, optional integer indexIn, optional integer flagsIn)
+   * ```
+   * Load a font from a file. Available characters are limited to those
+   *
+   * contained in the file.
+   *
+   *
+   *
+   * Bits 0-15 of 'index' are the the index of the face in the font file (starting
+   *
+   * from 0). Set to 0 if the font file contains only one font face.
+   *
+   * Bits 16-30 (for TrueType GX and OpenType Font Variations only) specify the
+   *
+   * named instance index for the current face index (starting from 1).
+   *
+   * 0 ignores named instances.
+   *
+   *
+   *
+   * The font styles in 'flags' are simulated by the rasterizer.
+   *
+   * See also CreateFontFromMem.
+   */
+  function ImGui_CreateFontFromFile(
+    file: string,
+    indexIn?: number,
     flagsIn?: number,
   ): ImGui_Font;
 
   /**
    * ```
-   * ImGui_Font _ = reaper.ImGui_CreateFontFromMem(string data, integer size, optional integer flagsIn)
+   * ImGui_Font _ = reaper.ImGui_CreateFontFromMem(string data, optional integer indexIn, optional integer flagsIn)
    * ```
    * Requires REAPER v6.44 or newer for EEL and Lua. Use CreateFont or
    *
@@ -13481,13 +13969,11 @@ declare namespace reaper {
    *
    *
    *
-   * - The first byte of 'flags' is used as the font index within the file
-   *
-   * - The font styles in 'flags' are simulated by the font renderer
+   * See CreateFontFromFile for the meaning of 'index' and 'flags'.
    */
   function ImGui_CreateFontFromMem(
     data: string,
-    size: number,
+    indexIn?: number,
     flagsIn?: number,
   ): ImGui_Font;
 
@@ -13547,6 +14033,23 @@ declare namespace reaper {
     flagsIn?: number,
   ): ImGui_Image;
 
+  /**
+   * ```
+   * ImGui_Image _ = reaper.ImGui_CreateImageFromSize(integer width, integer height, optional integer flagsIn)
+   * ```
+   * Create a blank image of the specified dimensions. See Image_SetPixels_Array.
+   */
+  function ImGui_CreateImageFromSize(
+    width: number,
+    height: number,
+    flagsIn?: number,
+  ): ImGui_Image;
+
+  /**
+   * ```
+   * ImGui_ImageSet img = reaper.ImGui_CreateImageSet()
+   * ```
+   */
   function ImGui_CreateImageSet(): ImGui_ImageSet;
 
   /**
@@ -13573,6 +14076,14 @@ declare namespace reaper {
    * ```
    */
   function ImGui_DebugFlashStyleColor(ctx: ImGui_Context, idx: number): void;
+
+  /**
+   * ```
+   * reaper.ImGui_DebugLog(ImGui_Context ctx, string text)
+   * ```
+   * Add a line to the debug log window. See ShowDebugLogWindow.
+   */
+  function ImGui_DebugLog(ctx: ImGui_Context, text: string): void;
 
   /**
    * ```
@@ -15033,7 +15544,7 @@ declare namespace reaper {
    * ```
    * number x, number y = reaper.ImGui_GetContentRegionAvail(ImGui_Context ctx)
    * ```
-   * == GetContentRegionMax() - GetCursorPos()
+   * Available space from current position. This is your best friend.
    */
   function ImGui_GetContentRegionAvail(
     ctx: ImGui_Context,
@@ -15041,21 +15552,9 @@ declare namespace reaper {
 
   /**
    * ```
-   * number x, number y = reaper.ImGui_GetContentRegionMax(ImGui_Context ctx)
-   * ```
-   * Current content boundaries (typically window boundaries including scrolling,
-   *
-   * or current column boundaries), in windows coordinates.
-   */
-  function ImGui_GetContentRegionMax(
-    ctx: ImGui_Context,
-  ): LuaMultiReturn<[number, number]>;
-
-  /**
-   * ```
    * number x, number y = reaper.ImGui_GetCursorPos(ImGui_Context ctx)
    * ```
-   * Cursor position in window
+   * Cursor position in window-local coordinates.
    */
   function ImGui_GetCursorPos(
     ctx: ImGui_Context,
@@ -15065,7 +15564,7 @@ declare namespace reaper {
    * ```
    * number _ = reaper.ImGui_GetCursorPosX(ImGui_Context ctx)
    * ```
-   * Cursor X position in window
+   * Cursor X position in window-local coordinates.
    */
   function ImGui_GetCursorPosX(ctx: ImGui_Context): number;
 
@@ -15073,7 +15572,7 @@ declare namespace reaper {
    * ```
    * number _ = reaper.ImGui_GetCursorPosY(ImGui_Context ctx)
    * ```
-   * Cursor Y position in window
+   * Cursor Y position in window-local coordinates.
    */
   function ImGui_GetCursorPosY(ctx: ImGui_Context): number;
 
@@ -15081,7 +15580,11 @@ declare namespace reaper {
    * ```
    * number x, number y = reaper.ImGui_GetCursorScreenPos(ImGui_Context ctx)
    * ```
-   * Cursor position in absolute screen coordinates (useful to work with the DrawList API).
+   * Cursor position in absolute screen coordinates.
+   *
+   * Prefer using this rather than GetCursorPos (it's also more useful to work with
+   *
+   * the DrawList API).
    */
   function ImGui_GetCursorScreenPos(
     ctx: ImGui_Context,
@@ -15092,6 +15595,8 @@ declare namespace reaper {
    * number x, number y = reaper.ImGui_GetCursorStartPos(ImGui_Context ctx)
    * ```
    * Initial cursor position in window coordinates.
+   *
+   * Call GetCursorScreenPos after Begin to get the absolute coordinates version.
    */
   function ImGui_GetCursorStartPos(
     ctx: ImGui_Context,
@@ -15144,7 +15649,7 @@ declare namespace reaper {
    * ```
    * Get current font size (= height in pixels) of current font with current scale
    *
-   * applied.
+   * applied. See also GetTextLineHeight and GetFrameHeight.
    */
   function ImGui_GetFontSize(ctx: ImGui_Context): number;
 
@@ -15170,7 +15675,7 @@ declare namespace reaper {
    * ```
    * number _ = reaper.ImGui_GetFrameHeight(ImGui_Context ctx)
    * ```
-   * GetFontSize + StyleVar_FramePadding.y * 2
+   * GetTextLineHeight + StyleVar_FramePadding.y * 2
    */
   function ImGui_GetFrameHeight(ctx: ImGui_Context): number;
 
@@ -15178,7 +15683,7 @@ declare namespace reaper {
    * ```
    * number _ = reaper.ImGui_GetFrameHeightWithSpacing(ImGui_Context ctx)
    * ```
-   * GetFontSize + StyleVar_FramePadding.y * 2 + StyleVar_ItemSpacing.y
+   * GetTextLineHeight + StyleVar_FramePadding.y * 2 + StyleVar_ItemSpacing.y
    *
    * (distance in pixels between 2 consecutive lines of framed widgets).
    */
@@ -15449,7 +15954,9 @@ declare namespace reaper {
    * ```
    * number _ = reaper.ImGui_GetTextLineHeight(ImGui_Context ctx)
    * ```
-   * Same as GetFontSize
+   * Total height of a line of text
+   *
+   * (typically higher than GetFontSize depending on the font).
    */
   function ImGui_GetTextLineHeight(ctx: ImGui_Context): number;
 
@@ -15457,7 +15964,7 @@ declare namespace reaper {
    * ```
    * number _ = reaper.ImGui_GetTextLineHeightWithSpacing(ImGui_Context ctx)
    * ```
-   * GetFontSize + StyleVar_ItemSpacing.y
+   * GetTextLineHeight + StyleVar_ItemSpacing.y
    *
    * (distance in pixels between 2 consecutive lines of text).
    */
@@ -15490,28 +15997,6 @@ declare namespace reaper {
 
   /**
    * ```
-   * number x, number y = reaper.ImGui_GetWindowContentRegionMax(ImGui_Context ctx)
-   * ```
-   * Content boundaries max (roughly (0,0)+Size-Scroll) where Size can be
-   *
-   * overridden with SetNextWindowContentSize, in window coordinates.
-   */
-  function ImGui_GetWindowContentRegionMax(
-    ctx: ImGui_Context,
-  ): LuaMultiReturn<[number, number]>;
-
-  /**
-   * ```
-   * number x, number y = reaper.ImGui_GetWindowContentRegionMin(ImGui_Context ctx)
-   * ```
-   * Content boundaries min (roughly (0,0)-Scroll), in window coordinates.
-   */
-  function ImGui_GetWindowContentRegionMin(
-    ctx: ImGui_Context,
-  ): LuaMultiReturn<[number, number]>;
-
-  /**
-   * ```
    * integer _ = reaper.ImGui_GetWindowDockID(ImGui_Context ctx)
    * ```
    */
@@ -15540,6 +16025,8 @@ declare namespace reaper {
    * number _ = reaper.ImGui_GetWindowHeight(ImGui_Context ctx)
    * ```
    * Get current window height (shortcut for (GetWindowSize().h).
+   *
+   * It is unlikely you ever need to use this!
    */
   function ImGui_GetWindowHeight(ctx: ImGui_Context): number;
 
@@ -15547,9 +16034,11 @@ declare namespace reaper {
    * ```
    * number x, number y = reaper.ImGui_GetWindowPos(ImGui_Context ctx)
    * ```
-   * Get current window position in screen space (note: it is unlikely you need to
+   * Get current window position in screen space.
    *
-   * use this. Consider using current layout pos instead, GetCursorScreenPos()).
+   * It is unlikely you ever need to use this!
+   *
+   * Consider always using GetCursorScreenPos and GetContentRegionAvail instead.
    */
   function ImGui_GetWindowPos(
     ctx: ImGui_Context,
@@ -15559,9 +16048,11 @@ declare namespace reaper {
    * ```
    * number w, number h = reaper.ImGui_GetWindowSize(ImGui_Context ctx)
    * ```
-   * Get current window size (note: it is unlikely you need to use this.
+   * Get current window size.
    *
-   * Consider using GetCursorScreenPos() and e.g. GetContentRegionAvail() instead)
+   * It is unlikely you ever need to use this!
+   *
+   * Consider always using GetCursorScreenPos and GetContentRegionAvail instead.
    */
   function ImGui_GetWindowSize(
     ctx: ImGui_Context,
@@ -15580,6 +16071,8 @@ declare namespace reaper {
    * number _ = reaper.ImGui_GetWindowWidth(ImGui_Context ctx)
    * ```
    * Get current window width (shortcut for (GetWindowSize().w).
+   *
+   * It is unlikely you ever need to use this!
    */
   function ImGui_GetWindowWidth(ctx: ImGui_Context): number;
 
@@ -15719,7 +16212,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_HoveredFlags_NoNavOverride()
    * ```
-   * Disable using gamepad/keyboard navigation state when active, always query mouse.
+   * Disable using keyboard/gamepad navigation state when active, always query mouse.
    */
   function ImGui_HoveredFlags_NoNavOverride(): number;
 
@@ -15793,9 +16286,9 @@ declare namespace reaper {
 
   /**
    * ```
-   * reaper.ImGui_Image(ImGui_Context ctx, ImGui_Image image, number image_size_w, number image_size_h, optional number uv0_xIn, optional number uv0_yIn, optional number uv1_xIn, optional number uv1_yIn, optional integer tint_col_rgbaIn, optional integer border_col_rgbaIn)
+   * reaper.ImGui_Image(ImGui_Context ctx, ImGui_Image image, number image_size_w, number image_size_h, optional number uv0_xIn, optional number uv0_yIn, optional number uv1_xIn, optional number uv1_yIn)
    * ```
-   * Adds 2.0 to the provided size if a border is visible.
+   * Adds StyleVar_ImageBorderSize on each side.
    */
   function ImGui_Image(
     ctx: ImGui_Context,
@@ -15806,15 +16299,15 @@ declare namespace reaper {
     uv0_yIn?: number,
     uv1_xIn?: number,
     uv1_yIn?: number,
-    tint_col_rgbaIn?: number,
-    border_col_rgbaIn?: number,
   ): void;
 
   /**
    * ```
    * boolean _ = reaper.ImGui_ImageButton(ImGui_Context ctx, string str_id, ImGui_Image image, number image_size_w, number image_size_h, optional number uv0_xIn, optional number uv0_yIn, optional number uv1_xIn, optional number uv1_yIn, optional integer bg_col_rgbaIn, optional integer tint_col_rgbaIn)
    * ```
-   * Adds StyleVar_FramePadding*2.0 to provided size.
+   * Draws a background based on regular Button color + optionally an inner
+   *
+   * background if specified. Adds StyleVar_FramePadding to provided size.
    */
   function ImGui_ImageButton(
     ctx: ImGui_Context,
@@ -15832,6 +16325,21 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_ImageFlags_NoErrors()
+   * ```
+   * Return nil instead of returning an error.
+   */
+  function ImGui_ImageFlags_NoErrors(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ImageFlags_None()
+   * ```
+   */
+  function ImGui_ImageFlags_None(): number;
+
+  /**
+   * ```
    * reaper.ImGui_ImageSet_Add(ImGui_ImageSet set, number scale, ImGui_Image image)
    * ```
    * 'img' cannot be another ImageSet.
@@ -15844,12 +16352,67 @@ declare namespace reaper {
 
   /**
    * ```
+   * reaper.ImGui_ImageWithBg(ImGui_Context ctx, ImGui_Image image, number image_size_w, number image_size_h, optional number uv0_xIn, optional number uv0_yIn, optional number uv1_xIn, optional number uv1_yIn, optional integer bg_col_rgbaIn, optional integer tint_col_rgbaIn)
+   * ```
+   * Draws a background based on regular Button color + optionally an inner
+   *
+   * background if specified. Adds StyleVar_FramePadding to provided size.
+   */
+  function ImGui_ImageWithBg(
+    ctx: ImGui_Context,
+    image: ImGui_Image,
+    image_size_w: number,
+    image_size_h: number,
+    uv0_xIn?: number,
+    uv0_yIn?: number,
+    uv1_xIn?: number,
+    uv1_yIn?: number,
+    bg_col_rgbaIn?: number,
+    tint_col_rgbaIn?: number,
+  ): void;
+
+  /**
+   * ```
+   * reaper.ImGui_Image_GetPixels_Array(ImGui_Bitmap image, integer x, integer y, integer w, integer h, reaper_array pixels, optional integer offsetIn, optional integer pitchIn)
+   * ```
+   * Read the pixel data of the given rectangle. Pixel format is 0xRRGGBBAAp+0.
+   */
+  function ImGui_Image_GetPixels_Array(
+    image: ImGui_Bitmap,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    pixels: reaper_array,
+    offsetIn?: number,
+    pitchIn?: number,
+  ): void;
+
+  /**
+   * ```
    * number w, number h = reaper.ImGui_Image_GetSize(ImGui_Image image)
    * ```
    */
   function ImGui_Image_GetSize(
     image: ImGui_Image,
   ): LuaMultiReturn<[number, number]>;
+
+  /**
+   * ```
+   * reaper.ImGui_Image_SetPixels_Array(ImGui_Bitmap image, integer x, integer y, integer w, integer h, reaper_array pixels, optional integer offsetIn, optional integer pitchIn)
+   * ```
+   * Write the pixel data of the given rectangle. Pixel format is 0xRRGGBBAAp+0.
+   */
+  function ImGui_Image_SetPixels_Array(
+    image: ImGui_Bitmap,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    pixels: reaper_array,
+    offsetIn?: number,
+    pitchIn?: number,
+  ): void;
 
   /**
    * ```
@@ -16158,11 +16721,11 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_InputTextFlags_CallbackEdit()
    * ```
-   * Callback on any edit (note that InputText() already returns true on edit,
+   * Callback on any edit. Note that InputText already returns true on edit +
    *
-   *    the callback is useful mainly to manipulate the underlying buffer while
+   *    you can always use IsItemEdited. The callback is useful to manipulate the
    *
-   *    focus is active).
+   *    underlying buffer while focus is active.
    */
   function ImGui_InputTextFlags_CallbackEdit(): number;
 
@@ -16236,11 +16799,21 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_InputTextFlags_ElideLeft()
+   * ```
+   * When text doesn't fit, elide left side to ensure right side stays visible.
+   *
+   *    Useful for path/filenames. Single-line only!
+   */
+  function ImGui_InputTextFlags_ElideLeft(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_InputTextFlags_EnterReturnsTrue()
    * ```
-   * Return 'true' when Enter is pressed (as opposed to every time the value was
+   * Return true when Enter is pressed (as opposed to every time the value was
    *
-   *    modified). Consider looking at the IsItemDeactivatedAfterEdit function.
+   *    modified). Consider using IsItemDeactivatedAfterEdit instead!
    */
   function ImGui_InputTextFlags_EnterReturnsTrue(): number;
 
@@ -16618,6 +17191,24 @@ declare namespace reaper {
 
   /**
    * ```
+   * boolean _ = reaper.ImGui_IsMouseReleasedWithDelay(ImGui_Context ctx, integer button, number delay)
+   * ```
+   * Delayed mouse release (use sparingly!). Generally used with
+   *
+   * `delay >= ConfigVar_MouseDoubleClickTime` + combined with a
+   *
+   * `GetMouseClickedCount()==1` test. This is a very rarely used UI idiom,
+   *
+   * but some apps use this: e.g. MS Explorer single click on an icon to rename.
+   */
+  function ImGui_IsMouseReleasedWithDelay(
+    ctx: ImGui_Context,
+    button: number,
+    delay: number,
+  ): boolean;
+
+  /**
+   * ```
    * boolean _ = reaper.ImGui_IsPopupOpen(ImGui_Context ctx, string str_id, optional integer flagsIn)
    * ```
    * Return true if the popup is open at the current BeginPopup level of the
@@ -16705,6 +17296,79 @@ declare namespace reaper {
    * See HoveredFlags_* for options.
    */
   function ImGui_IsWindowHovered(ctx: ImGui_Context, flagsIn?: number): boolean;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ItemFlags_AllowDuplicateId()
+   * ```
+   * Allow submitting an item with the same identifier as an item already
+   *
+   *    submitted this frame without triggering a warning tooltip if
+   *
+   *    ConfigVar_ConfigDebugHighlightIdConflicts is set.
+   */
+  function ImGui_ItemFlags_AllowDuplicateId(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ItemFlags_AutoClosePopups()
+   * ```
+   * MenuItem/Selectable automatically close their parent popup window.
+   *
+   *    Default = true
+   */
+  function ImGui_ItemFlags_AutoClosePopups(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ItemFlags_ButtonRepeat()
+   * ```
+   * Any button-like behavior will have repeat mode enabled (based on
+   *
+   *    ConfigVar_KeyRepeatDelay and ConfigVar_KeyRepeatRate values). Note that you
+   *
+   *    can also call IsItemActive after any button to tell if it is being held.
+   *
+   *    Default = false
+   */
+  function ImGui_ItemFlags_ButtonRepeat(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ItemFlags_NoNav()
+   * ```
+   * Disable any form of focusing (keyboard/gamepad directional navigation and
+   *
+   *    SetKeyboardFocusHere calls). Default = false
+   */
+  function ImGui_ItemFlags_NoNav(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ItemFlags_NoNavDefaultFocus()
+   * ```
+   * Disable item being a candidate for default focus (e.g. used by title bar
+   *
+   *    items). Default = false
+   */
+  function ImGui_ItemFlags_NoNavDefaultFocus(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ItemFlags_NoTabStop()
+   * ```
+   * Disable keyboard tabbing. This is a "lighter" version of ItemFlags_NoNav.
+   *
+   *    Default = false.
+   */
+  function ImGui_ItemFlags_NoTabStop(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_ItemFlags_None()
+   * ```
+   */
+  function ImGui_ItemFlags_None(): number;
 
   /**
    * ```
@@ -17269,6 +17933,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_Key_LeftAlt()
    * ```
+   * See also Mod_Alt
    */
   function ImGui_Key_LeftAlt(): number;
 
@@ -17291,6 +17956,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_Key_LeftCtrl()
    * ```
+   * See also Mod_Ctrl
    */
   function ImGui_Key_LeftCtrl(): number;
 
@@ -17298,6 +17964,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_Key_LeftShift()
    * ```
+   * See also Mod_Shift
    */
   function ImGui_Key_LeftShift(): number;
 
@@ -17305,6 +17972,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_Key_LeftSuper()
    * ```
+   * See also Mod_Super
    */
   function ImGui_Key_LeftSuper(): number;
 
@@ -17319,6 +17987,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_Key_Menu()
    * ```
+   * Also known as the application key
    */
   function ImGui_Key_Menu(): number;
 
@@ -17402,6 +18071,14 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_Key_Oem102()
+   * ```
+   * Key next to the left shift on ISO keyboards.
+   */
+  function ImGui_Key_Oem102(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_Key_P()
    * ```
    */
@@ -17461,6 +18138,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_Key_RightAlt()
    * ```
+   * See also Mod_Alt
    */
   function ImGui_Key_RightAlt(): number;
 
@@ -17483,6 +18161,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_Key_RightCtrl()
    * ```
+   * See also Mod_Ctrl
    */
   function ImGui_Key_RightCtrl(): number;
 
@@ -17490,6 +18169,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_Key_RightShift()
    * ```
+   * See also Mod_Shift
    */
   function ImGui_Key_RightShift(): number;
 
@@ -17497,6 +18177,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_Key_RightSuper()
    * ```
+   * See also Mod_Super
    */
   function ImGui_Key_RightSuper(): number;
 
@@ -17634,9 +18315,11 @@ declare namespace reaper {
    * ```
    * reaper.ImGui_ListClipper_Begin(ImGui_ListClipper clipper, integer items_count, optional number items_heightIn)
    * ```
-   * - items_count: Use INT_MAX if you don't know how many items you have
+   * - items_count: Use INT_MAX from NumericLimits_Int if you don't know how many
    *
-   * (in which case the cursor won't be advanced in the final step)
+   * items you have (in which case the cursor won't be advanced in the final step,
+   *
+   * and you can call SeekCursorForItem manually if you need)
    *
    * - items_height: Use -1.0 to be calculated automatically on first step.
    *
@@ -17702,6 +18385,23 @@ declare namespace reaper {
     clipper: ImGui_ListClipper,
     item_begin: number,
     item_end: number,
+  ): void;
+
+  /**
+   * ```
+   * reaper.ImGui_ListClipper_SeekCursorForItem(ImGui_ListClipper clipper, integer items_count)
+   * ```
+   * Seek cursor toward given item. This is automatically called while stepping.
+   *
+   * The only reason to call this is: you can use ListClipper_Begin(INT_MAX) if you
+   *
+   * don't know item count ahead of time. In this case, after all steps are done,
+   *
+   * you'll want to call SeekCursorForItem(items_count).
+   */
+  function ImGui_ListClipper_SeekCursorForItem(
+    clipper: ImGui_ListClipper,
+    items_count: number,
   ): void;
 
   /**
@@ -17873,6 +18573,14 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_MouseCursor_Progress()
+   * ```
+   * When waiting for something to process/load, but application is still interactive.
+   */
+  function ImGui_MouseCursor_Progress(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_MouseCursor_ResizeAll()
    * ```
    * (Unused by Dear ImGui functions)
@@ -17918,6 +18626,14 @@ declare namespace reaper {
    * When hovering over InputText, etc.
    */
   function ImGui_MouseCursor_TextInput(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_MouseCursor_Wait()
+   * ```
+   * When waiting for something to process/load.
+   */
+  function ImGui_MouseCursor_Wait(): number;
 
   /**
    * ```
@@ -18050,14 +18766,6 @@ declare namespace reaper {
 
   /**
    * ```
-   * reaper.ImGui_PopButtonRepeat(ImGui_Context ctx)
-   * ```
-   * See PushButtonRepeat
-   */
-  function ImGui_PopButtonRepeat(ctx: ImGui_Context): void;
-
-  /**
-   * ```
    * reaper.ImGui_PopClipRect(ImGui_Context ctx)
    * ```
    * See PushClipRect
@@ -18082,6 +18790,14 @@ declare namespace reaper {
 
   /**
    * ```
+   * reaper.ImGui_PopItemFlag(ImGui_Context ctx)
+   * ```
+   * See PushItemFlag
+   */
+  function ImGui_PopItemFlag(ctx: ImGui_Context): void;
+
+  /**
+   * ```
    * reaper.ImGui_PopItemWidth(ImGui_Context ctx)
    * ```
    * See PushItemWidth
@@ -18102,14 +18818,6 @@ declare namespace reaper {
    * Reset a style variable.
    */
   function ImGui_PopStyleVar(ctx: ImGui_Context, countIn?: number): void;
-
-  /**
-   * ```
-   * reaper.ImGui_PopTabStop(ImGui_Context ctx)
-   * ```
-   * See PushTabStop
-   */
-  function ImGui_PopTabStop(ctx: ImGui_Context): void;
 
   /**
    * ```
@@ -18225,22 +18933,6 @@ declare namespace reaper {
 
   /**
    * ```
-   * reaper.ImGui_PushButtonRepeat(ImGui_Context ctx, boolean _repeat)
-   * ```
-   * In 'repeat' mode, Button*() functions return repeated true in a typematic
-   *
-   * manner (using ConfigVar_KeyRepeatDelay/ConfigVar_KeyRepeatRate settings).
-   *
-   *
-   *
-   * Note that you can call IsItemActive after any Button to tell if the button is
-   *
-   * held in the current frame.
-   */
-  function ImGui_PushButtonRepeat(ctx: ImGui_Context, _repeat: boolean): void;
-
-  /**
-   * ```
    * reaper.ImGui_PushClipRect(ImGui_Context ctx, number clip_rect_min_x, number clip_rect_min_y, number clip_rect_max_x, number clip_rect_max_y, boolean intersect_with_current_clip_rect)
    * ```
    */
@@ -18255,13 +18947,15 @@ declare namespace reaper {
 
   /**
    * ```
-   * reaper.ImGui_PushFont(ImGui_Context ctx, ImGui_Font font)
+   * reaper.ImGui_PushFont(ImGui_Context ctx, ImGui_Font font, number font_size_base_unscaled)
    * ```
-   * Change the current font. Use nil to push the default font.
-   *
-   * The font object must have been registered using Attach. See PopFont.
+   * Change the current font. Pass font=nil to only change the size. See PopFont.
    */
-  function ImGui_PushFont(ctx: ImGui_Context, font: ImGui_Font): void;
+  function ImGui_PushFont(
+    ctx: ImGui_Context,
+    font: ImGui_Font,
+    font_size_base_unscaled: number,
+  ): void;
 
   /**
    * ```
@@ -18270,6 +18964,20 @@ declare namespace reaper {
    * Push string into the ID stack.
    */
   function ImGui_PushID(ctx: ImGui_Context, str_id: string): void;
+
+  /**
+   * ```
+   * reaper.ImGui_PushItemFlag(ImGui_Context ctx, integer option, boolean enabled)
+   * ```
+   * Modify specified shared item flag for certain widgets.
+   *
+   * Example: `PushItemFlag(ItemFlags_NoTabStop, true)`.
+   */
+  function ImGui_PushItemFlag(
+    ctx: ImGui_Context,
+    option: number,
+    enabled: boolean,
+  ): void;
 
   /**
    * ```
@@ -18307,30 +19015,44 @@ declare namespace reaper {
 
   /**
    * ```
-   * reaper.ImGui_PushStyleVar(ImGui_Context ctx, integer var_idx, number val1, optional number val2In)
+   * reaper.ImGui_PushStyleVar(ImGui_Context ctx, integer idx, number val1, optional number val2In)
    * ```
    * Temporarily modify a style variable.
    *
    * Call PopStyleVar to undo after use (before the end of the frame).
    *
-   * See StyleVar_* for possible values of 'var_idx'.
+   * See StyleVar_* for possible values of 'idx'.
    */
   function ImGui_PushStyleVar(
     ctx: ImGui_Context,
-    var_idx: number,
+    idx: number,
     val1: number,
     val2In?: number,
   ): void;
 
   /**
    * ```
-   * reaper.ImGui_PushTabStop(ImGui_Context ctx, boolean tab_stop)
+   * reaper.ImGui_PushStyleVarX(ImGui_Context ctx, integer idx, number val_x)
    * ```
-   * Allow focusing using TAB/Shift-TAB, enabled by default but you can disable it
-   *
-   * for certain widgets
+   * Modify the X component of a style variable. See PushStyleVar.
    */
-  function ImGui_PushTabStop(ctx: ImGui_Context, tab_stop: boolean): void;
+  function ImGui_PushStyleVarX(
+    ctx: ImGui_Context,
+    idx: number,
+    val_x: number,
+  ): void;
+
+  /**
+   * ```
+   * reaper.ImGui_PushStyleVarY(ImGui_Context ctx, integer idx, number val_y)
+   * ```
+   * Modify the X component of a style variable. See PushStyleVar.
+   */
+  function ImGui_PushStyleVarY(
+    ctx: ImGui_Context,
+    idx: number,
+    val_y: number,
+  ): void;
 
   /**
    * ```
@@ -18440,11 +19162,19 @@ declare namespace reaper {
 
   /**
    * ```
-   * integer _ = reaper.ImGui_SelectableFlags_DontClosePopups()
+   * integer _ = reaper.ImGui_SelectableFlags_Highlight()
    * ```
-   * Clicking this doesn't close parent popup window.
+   * Make the item be displayed as if it is hovered.
    */
-  function ImGui_SelectableFlags_DontClosePopups(): number;
+  function ImGui_SelectableFlags_Highlight(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_SelectableFlags_NoAutoClosePopups()
+   * ```
+   * Clicking this doesn't close parent popup window (overrides ItemFlags_AutoClosePopups)
+   */
+  function ImGui_SelectableFlags_NoAutoClosePopups(): number;
 
   /**
    * ```
@@ -18571,7 +19301,7 @@ declare namespace reaper {
    * ```
    * reaper.ImGui_SetItemDefaultFocus(ImGui_Context ctx)
    * ```
-   * Make last item the default focused item of a window.
+   * Make last item the default focused item of a newly appearing window.
    */
   function ImGui_SetItemDefaultFocus(ctx: ImGui_Context): void;
 
@@ -18607,6 +19337,19 @@ declare namespace reaper {
    * Set desired mouse cursor shape. See MouseCursor_* for possible values.
    */
   function ImGui_SetMouseCursor(ctx: ImGui_Context, cursor_type: number): void;
+
+  /**
+   * ```
+   * reaper.ImGui_SetNavCursorVisible(ImGui_Context ctx, boolean visible)
+   * ```
+   * Alter visibility of keyboard/gamepad cursor. By default: shown when using an
+   *
+   * arrow key, hidden when clicking with the mouse.
+   */
+  function ImGui_SetNavCursorVisible(
+    ctx: ImGui_Context,
+    visible: boolean,
+  ): void;
 
   /**
    * ```
@@ -19175,11 +19918,31 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_SliderFlags_AlwaysClamp()
    * ```
-   * Clamp value to min/max bounds when input manually with CTRL+Click.
-   *
-   *    By default CTRL+Click allows going out of bounds.
+   * SliderFlags_ClampOnInput | SliderFlags_ClampZeroRange
    */
   function ImGui_SliderFlags_AlwaysClamp(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_SliderFlags_ClampOnInput()
+   * ```
+   * Clamp value to min/max bounds when input manually with Ctrl+Click.
+   *
+   *    By default Ctrl+Click allows going out of bounds.
+   */
+  function ImGui_SliderFlags_ClampOnInput(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_SliderFlags_ClampZeroRange()
+   * ```
+   * Clamp even if min==max==0. Otherwise due to legacy reason Drag* functions
+   *
+   *    don't clamp with those values. When your clamping limits are dynamic you
+   *
+   *    almost always want to use it.
+   */
+  function ImGui_SliderFlags_ClampZeroRange(): number;
 
   /**
    * ```
@@ -19213,6 +19976,16 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_SliderFlags_NoSpeedTweaks()
+   * ```
+   * Disable keyboard modifiers altering tweak speed.
+   *
+   *    Useful if you want to alter tweak speed yourself based on your own logic.
+   */
+  function ImGui_SliderFlags_NoSpeedTweaks(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_SliderFlags_None()
    * ```
    */
@@ -19222,9 +19995,9 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_SliderFlags_WrapAround()
    * ```
-   * Enable wrapping around from max to min and from min to max
+   * Enable wrapping around from max to min and from min to max.
    *
-   *    (only supported by DragXXX() functions for now).
+   *    Only supported by Drag* functions for now.
    */
   function ImGui_SliderFlags_WrapAround(): number;
 
@@ -19437,6 +20210,14 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_StyleVar_ImageBorderSize()
+   * ```
+   * Thickness of border around Image calls.
+   */
+  function ImGui_StyleVar_ImageBorderSize(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_StyleVar_IndentSpacing()
    * ```
    * Horizontal indentation when e.g. entering a tree node.
@@ -19549,6 +20330,14 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_StyleVar_TabBarOverlineSize()
+   * ```
+   * Thickness of tab-bar overline, which highlights the selected tab-bar.
+   */
+  function ImGui_StyleVar_TabBarOverlineSize(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_StyleVar_TabBorderSize()
    * ```
    * Thickness of border around tabs.
@@ -19578,6 +20367,22 @@ declare namespace reaper {
    * Alignment of angled headers within the cell
    */
   function ImGui_StyleVar_TableAngledHeadersTextAlign(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_StyleVar_TreeLinesRounding()
+   * ```
+   * Radius of lines connecting child nodes to the vertical line.
+   */
+  function ImGui_StyleVar_TreeLinesRounding(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_StyleVar_TreeLinesSize()
+   * ```
+   * Thickness of outlines when using TreeNodeFlags_DrawLines.
+   */
+  function ImGui_StyleVar_TreeLinesSize(): number;
 
   /**
    * ```
@@ -19962,11 +20767,15 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_TableColumnFlags_NoHeaderLabel()
    * ```
-   * TableHeadersRow will not submit horizontal label for this column.
+   * TableHeadersRow will submit an empty label for this column.
    *
-   *    Convenient for some small columns. Name will still appear in context menu
+   *    Convenient for some small columns.
    *
-   *    or in angled headers.
+   *    Name will still appear in context menu or in angled headers.
+   *
+   *    You may append into this cell by calling TableSetColumnIndex right after
+   *
+   *    the TableHeadersRow call.
    */
   function ImGui_TableColumnFlags_NoHeaderLabel(): number;
 
@@ -20731,6 +21540,26 @@ declare namespace reaper {
 
   /**
    * ```
+   * boolean _ = reaper.ImGui_TextLink(ImGui_Context ctx, string label)
+   * ```
+   * Hyperlink text button, returns true when clicked.
+   */
+  function ImGui_TextLink(ctx: ImGui_Context, label: string): boolean;
+
+  /**
+   * ```
+   * boolean _ = reaper.ImGui_TextLinkOpenURL(ImGui_Context ctx, string label, optional string urlIn)
+   * ```
+   * Hyperlink text button, automatically open file/url when clicked
+   */
+  function ImGui_TextLinkOpenURL(
+    ctx: ImGui_Context,
+    label: string,
+    urlIn?: string,
+  ): boolean;
+
+  /**
+   * ```
    * reaper.ImGui_TextWrapped(ImGui_Context ctx, string text)
    * ```
    * Shortcut for PushTextWrapPos(0.0); Text(text); PopTextWrapPos();.
@@ -20810,6 +21639,38 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_TreeNodeFlags_DrawLinesFull()
+   * ```
+   * Horizontal lines to child nodes.
+   *
+   *    Vertical line drawn down to TreePop() position: cover full contents.
+   *
+   *    Faster (for large trees).
+   */
+  function ImGui_TreeNodeFlags_DrawLinesFull(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_TreeNodeFlags_DrawLinesNone()
+   * ```
+   * No lines drawn
+   */
+  function ImGui_TreeNodeFlags_DrawLinesNone(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_TreeNodeFlags_DrawLinesToNodes()
+   * ```
+   * Horizontal lines to child nodes.
+   *
+   *    Vertical line drawn down to bottom-most child node.
+   *
+   *    Slower (for large trees).
+   */
+  function ImGui_TreeNodeFlags_DrawLinesToNodes(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_TreeNodeFlags_FramePadding()
    * ```
    * Use FramePadding (even for an unframed text node) to vertically align text
@@ -20830,11 +21691,29 @@ declare namespace reaper {
 
   /**
    * ```
+   * integer _ = reaper.ImGui_TreeNodeFlags_LabelSpanAllColumns()
+   * ```
+   * Label will span all columns of its container table
+   */
+  function ImGui_TreeNodeFlags_LabelSpanAllColumns(): number;
+
+  /**
+   * ```
    * integer _ = reaper.ImGui_TreeNodeFlags_Leaf()
    * ```
    * No collapsing, no arrow (use as a convenience for leaf nodes).
    */
   function ImGui_TreeNodeFlags_Leaf(): number;
+
+  /**
+   * ```
+   * integer _ = reaper.ImGui_TreeNodeFlags_NavLeftJumpsToParent()
+   * ```
+   * Nav: left arrow moves back to parent. This is processed in TreePop when
+   *
+   *    there's an unfullfilled Left nav request remaining.
+   */
+  function ImGui_TreeNodeFlags_NavLeftJumpsToParent(): number;
 
   /**
    * ```
@@ -20867,11 +21746,9 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_TreeNodeFlags_OpenOnArrow()
    * ```
-   * Only open when clicking on the arrow part.
+   * Open when clicking on the arrow part (default for multi-select unless any
    *
-   *    If TreeNodeFlags_OpenOnDoubleClick is also set, single-click arrow or
-   *
-   *    double-click all box to open.
+   *    _OpenOnXXX behavior is set explicitly). Both behaviors may be combined.
    */
   function ImGui_TreeNodeFlags_OpenOnArrow(): number;
 
@@ -20879,7 +21756,9 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_TreeNodeFlags_OpenOnDoubleClick()
    * ```
-   * Need double-click to open node.
+   * Open on double-click instead of simple click (default for multi-select unless
+   *
+   *    any _OpenOnXXX behavior is set explicitly). Both behaviors may be combined.
    */
   function ImGui_TreeNodeFlags_OpenOnDoubleClick(): number;
 
@@ -20895,7 +21774,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_TreeNodeFlags_SpanAllColumns()
    * ```
-   * Frame will span all columns of its container table (text will still fit in current column).
+   * Frame will span all columns of its container table (label will still fit in current column).
    */
   function ImGui_TreeNodeFlags_SpanAllColumns(): number;
 
@@ -20923,11 +21802,11 @@ declare namespace reaper {
 
   /**
    * ```
-   * integer _ = reaper.ImGui_TreeNodeFlags_SpanTextWidth()
+   * integer _ = reaper.ImGui_TreeNodeFlags_SpanLabelWidth()
    * ```
    * Narrow hit box + narrow hovering highlight, will only cover the label text.
    */
-  function ImGui_TreeNodeFlags_SpanTextWidth(): number;
+  function ImGui_TreeNodeFlags_SpanLabelWidth(): number;
 
   /**
    * ```
@@ -21012,6 +21891,8 @@ declare namespace reaper {
    * - ImGui_Function*
    *
    * - ImGui_Image*
+   *
+   *   - ImGui_Bitmap*
    *
    *   - ImGui_ImageSet*
    *
@@ -21209,7 +22090,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_WindowFlags_NoNavFocus()
    * ```
-   * No focusing toward this window with gamepad/keyboard navigation
+   * No focusing toward this window with keyboard/gamepad navigation
    *
    *    (e.g. skipped by CTRL+TAB).
    */
@@ -21219,7 +22100,7 @@ declare namespace reaper {
    * ```
    * integer _ = reaper.ImGui_WindowFlags_NoNavInputs()
    * ```
-   * No gamepad/keyboard navigation within the window.
+   * No keyboard/gamepad navigation within the window.
    */
   function ImGui_WindowFlags_NoNavInputs(): number;
 
@@ -25430,11 +26311,7 @@ declare namespace reaper {
    * ```
    * reaper.set_action_options(flag)
    * ```
-   * Sets action options for the script.
-   * - flag&1: script will auto-terminate if re-launched while already running
-   * - flag&2: if (flag&1) is set, script will re-launch after auto-terminating
-   * - flag&4: set script toggle state on
-   * - flag&8: set script toggle state off
+   * reaper.set_action_options(flag)Sets action options for the script.flag&1: script will auto-terminate if re-launched while already runningflag&2: if (flag&1) is set, script will re-launch after auto-terminating. otherwise, re-launch is ignored.flag&4: set script toggle state onflag&8: set script toggle state off
    */
   function set_action_options(flag: number): void;
 }
@@ -25825,11 +26702,11 @@ declare namespace gfx {
 
   /**
    * ```
-   * gfx.measurechar(any char)
+   * gfx.measurechar(any codepoint)
    * ```
-   * Measures the drawing dimensions of a character with the current font (as set by gfx.setfont). Returns width and height of character.
+   * Measures the drawing dimensions of a character (for example, ascii code point 97 is 'a') with the current font (as set by gfx.setfont). Returns width and height of character.
    */
-  function measurechar(char: string): LuaMultiReturn<[number, number]>;
+  function measurechar(codepoint: any): void;
 
   /**
    * Measures the drawing dimensions of a string with the current font (as set by gfx.setfont). Returns width and height of string.
