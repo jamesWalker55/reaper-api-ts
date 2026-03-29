@@ -123,6 +123,14 @@ export function parseFxidx(
         : reaper.TrackFX_GetRecCount(opt.track)
       : reaper.TakeFX_GetCount(opt.take);
 
+  if (alen === 0) {
+    // there is no fx in this track, so this must be the end of path
+    return {
+      path: [fxidx - 1],
+      flags: flags | 0x2000000,
+    };
+  }
+
   // calculate variables for track root
   const ai = (fxidx % (alen + 1)) - 1;
   const arest = Math.floor(fxidx / (alen + 1));
@@ -130,6 +138,11 @@ export function parseFxidx(
     throw new Error("invalid container fxidx: root track fx index is negative");
   if (arest < 0)
     throw new Error("invalid container fxidx: track-level xrest is invalid");
+
+  // `arest` can either be:
+  // * (Ai + 1) + (Alen + 1) * (...)
+  // * (Ai + 1)
+  // * 0  // if the `(Alen + 1) * (...)` term does not exist in current level
 
   // a container fxidx must have at least 2 levels/depth, but for safety let's handle 1 level/depth anyway
   if (arest === 0) return { path: [ai], flags };
@@ -160,6 +173,15 @@ export function parseFxidx(
       error("invalid container fxidx: not a container");
     }
     const xlen = parseInt(xlenStr);
+
+    if (xlen === 0) {
+      // there is no fx in this container, so this must be the end of path,
+      const xi = prev.xrest - 1;
+      return {
+        path: [...stack.map((x) => x.xi), xi],
+        flags: flags | 0x2000000,
+      };
+    }
 
     const xi = (prev.xrest % (xlen + 1)) - 1;
     const xrest = Math.floor(prev.xrest / (xlen + 1));
