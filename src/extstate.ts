@@ -122,7 +122,7 @@ const GETTERS: {
 };
 
 type TypedSection<Config extends Record<string, keyof EncodeTypeMap>> = {
-  [K in keyof Config]: EncodeTypeMap[Config[K]];
+  [K in keyof Config]: EncodeTypeMap[Config[K]] | null;
 };
 
 export function TypedSection<T extends Record<string, keyof EncodeTypeMap>>(
